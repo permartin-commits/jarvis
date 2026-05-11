@@ -1,6 +1,6 @@
 import { Sidebar } from "@/components/sidebar";
-import { mockProjects, mockAiLogs } from "@/lib/mock-data";
 import { getPortfolioHoldings, getPortfolioStats } from "@/lib/portfolio";
+import { query } from "@/lib/db";
 import {
   Card,
   CardContent,
@@ -19,25 +19,109 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const statusColor: Record<string, string> = {
-  aktiv: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-  pause: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
-  fullført: "bg-blue-500/15 text-blue-400 border-blue-500/30",
-  idé: "bg-purple-500/15 text-purple-400 border-purple-500/30",
+// ── Status / handling colour maps ─────────────────────────────────────────────
+
+const mappedStatusColor: Record<string, string> = {
+  "i gang":   "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  ferdig:     "bg-blue-500/15 text-blue-400 border-blue-500/30",
+  planlagt:   "bg-purple-500/15 text-purple-400 border-purple-500/30",
+  "på vent":  "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
+  visjon:     "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
+  endgame:    "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
 };
 
-const logLevelColor: Record<string, string> = {
-  success: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-  info: "bg-blue-500/15 text-blue-400 border-blue-500/30",
-  warning: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
-  error: "bg-red-500/15 text-red-400 border-red-500/30",
+const mappedStatusLabel: Record<string, string> = {
+  "i gang":  "Aktiv",
+  ferdig:    "Fullført",
+  planlagt:  "Idé",
+  "på vent": "Pause",
+  visjon:    "Visjon",
+  endgame:   "Endgame",
 };
+
+const handlingColor: Record<string, string> = {
+  buy:      "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  kjøp:     "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  sell:     "bg-red-500/15 text-red-400 border-red-500/30",
+  salg:     "bg-red-500/15 text-red-400 border-red-500/30",
+  hold:     "bg-blue-500/15 text-blue-400 border-blue-500/30",
+  analyse:  "bg-purple-500/15 text-purple-400 border-purple-500/30",
+  alert:    "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
+};
+
+function handlingBadgeClass(handling: string | null): string {
+  if (!handling) return "bg-slate-500/15 text-slate-400 border-slate-500/30";
+  return handlingColor[handling.toLowerCase()] ?? "bg-slate-500/15 text-slate-400 border-slate-500/30";
+}
+
+function statusBadgeClass(status: string | null): string {
+  if (!status) return "bg-slate-500/15 text-slate-400 border-slate-500/30";
+  return mappedStatusColor[status.toLowerCase()] ?? "bg-slate-500/15 text-slate-400 border-slate-500/30";
+}
+
+function statusBadgeLabel(status: string | null): string {
+  if (!status) return "—";
+  return mappedStatusLabel[status.toLowerCase()] ?? status;
+}
+
+// ── Data fetchers ─────────────────────────────────────────────────────────────
+
+interface ProjectCounts { active: number; total: number }
+interface RecentProject { oppgave: string | null; kategori: string | null; status: string | null; fase: string | null }
+interface AiLogItem { id: number; ticker: string | null; handling: string | null; detaljer: string | null }
+
+async function getProjectCounts(): Promise<ProjectCounts> {
+  const [totalRes, activeRes] = await Promise.all([
+    query<{ count: string }>("SELECT COUNT(*) AS count FROM masterplan"),
+    query<{ count: string }>("SELECT COUNT(*) AS count FROM masterplan WHERE status = 'I gang'"),
+  ]);
+  return {
+    total: Number(totalRes.rows[0]?.count ?? 0),
+    active: Number(activeRes.rows[0]?.count ?? 0),
+  };
+}
+
+async function getRecentProjects(): Promise<RecentProject[]> {
+  const res = await query<RecentProject>(
+    `SELECT oppgave, kategori, status, fase
+     FROM masterplan
+     WHERE status = 'I gang' OR status = 'Aktiv'
+     LIMIT 3`
+  );
+  return res.rows;
+}
+
+async function getAiLogCount(): Promise<number> {
+  const res = await query<{ count: string }>("SELECT COUNT(*) AS count FROM ai_logger");
+  return Number(res.rows[0]?.count ?? 0);
+}
+
+async function getRecentAiLogs(): Promise<AiLogItem[]> {
+  const res = await query<AiLogItem>(
+    `SELECT id, ticker, handling, detaljer
+     FROM ai_logger
+     ORDER BY id DESC
+     LIMIT 3`
+  );
+  return res.rows;
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function Home() {
-  // Portfolio: live DB — fail gracefully
+  // Portfolio — fail gracefully
   let portfolioStats = { totalInvestert: 0, antallPosisjoner: 0 };
   let topHoldings: { ticker: string; investert: number; andel: number }[] = [];
   let dbError: string | null = null;
+
+  // Live data — run all in parallel
+  const [projectCounts, recentProjects, aiLogCount, recentAiLogs] =
+    await Promise.all([
+      getProjectCounts().catch(() => ({ active: 0, total: 0 })),
+      getRecentProjects().catch(() => [] as RecentProject[]),
+      getAiLogCount().catch(() => 0),
+      getRecentAiLogs().catch(() => [] as AiLogItem[]),
+    ]);
 
   try {
     const [stats, holdings] = await Promise.all([
@@ -48,23 +132,15 @@ export default async function Home() {
     topHoldings = holdings.slice(0, 4).map((h) => ({
       ticker: h.ticker,
       investert: h.investert,
-      andel:
-        stats.totalInvestert > 0
-          ? (h.investert / stats.totalInvestert) * 100
-          : 0,
+      andel: stats.totalInvestert > 0 ? (h.investert / stats.totalInvestert) * 100 : 0,
     }));
   } catch (err) {
     dbError = err instanceof Error ? err.message : "Ukjent databasefeil";
   }
 
-  // Mock-data for the rest (prosjekter + AI-logger er ikke i DB ennå)
-  const recentProjects = mockProjects.slice(0, 3);
-  const recentLogs = mockAiLogs.slice(0, 4);
-  const activeProjectCount = mockProjects.filter((p) => p.status === "aktiv").length;
-
   const timeOfDay = () => {
     const h = new Date().getHours();
-    if (h < 6) return "God natt";
+    if (h < 6)  return "God natt";
     if (h < 12) return "God morgen";
     if (h < 18) return "God dag";
     return "God kveld";
@@ -76,15 +152,15 @@ export default async function Home() {
 
       <main className="flex-1 overflow-y-auto bg-background">
         {/* Header */}
-        <div className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-sm px-8 py-4">
+        <div className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-sm px-4 md:px-8 py-4">
           <h1 className="text-lg font-semibold text-foreground">Oversikt</h1>
           <p className="text-xs text-muted-foreground">
             {timeOfDay()} — her er en snapshot av alt viktig.
           </p>
         </div>
 
-        <div className="px-8 py-6 space-y-8">
-          {/* DB-feilmelding */}
+        <div className="px-4 md:px-8 py-4 md:py-6 space-y-8">
+          {/* DB error banner */}
           {dbError && (
             <div className="flex items-start gap-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
               <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
@@ -103,9 +179,7 @@ export default async function Home() {
               value={
                 dbError
                   ? "—"
-                  : `${portfolioStats.totalInvestert.toLocaleString("nb-NO", {
-                      maximumFractionDigits: 0,
-                    })} kr`
+                  : `${portfolioStats.totalInvestert.toLocaleString("nb-NO", { maximumFractionDigits: 0 })} kr`
               }
               sub={
                 dbError ? (
@@ -120,36 +194,38 @@ export default async function Home() {
             <StatCard
               icon={<FolderKanban className="h-4 w-4" />}
               label="Aktive prosjekter"
-              value={String(activeProjectCount)}
+              value={String(projectCounts.active)}
               sub={
                 <span className="text-xs text-muted-foreground">
-                  av {mockProjects.length} totalt
+                  av {projectCounts.total} totalt
                 </span>
               }
             />
             <StatCard
               icon={<BrainCircuit className="h-4 w-4" />}
-              label="AI-kall denne uken"
-              value="28"
+              label="AI-analyser totalt"
+              value={aiLogCount.toLocaleString("nb-NO")}
               sub={
                 <span className="text-xs text-muted-foreground">
-                  siste 7 dager
+                  alle kall fra Speideren
                 </span>
               }
             />
             <StatCard
               icon={<Activity className="h-4 w-4" />}
-              label="Tokens denne uken"
-              value="42 800"
+              label="Masterplan-oppgaver"
+              value={String(projectCounts.total)}
               sub={
-                <span className="text-xs text-muted-foreground">inn + ut</span>
+                <span className="text-xs text-muted-foreground">
+                  {projectCounts.active} i gang
+                </span>
               }
             />
           </div>
 
           {/* Main content grid */}
           <div className="grid gap-6 lg:grid-cols-2">
-            {/* Top holdings — live DB */}
+            {/* Top holdings — live */}
             <Card className="bg-card border-border">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -179,16 +255,11 @@ export default async function Home() {
                         <div className="flex h-8 w-10 items-center justify-center rounded-md bg-primary/10 text-xs font-bold text-primary">
                           {h.ticker.slice(0, 4)}
                         </div>
-                        <p className="text-sm font-medium text-foreground">
-                          {h.ticker}
-                        </p>
+                        <p className="text-sm font-medium text-foreground">{h.ticker}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-semibold text-foreground">
-                          {h.investert.toLocaleString("nb-NO", {
-                            maximumFractionDigits: 0,
-                          })}{" "}
-                          kr
+                          {h.investert.toLocaleString("nb-NO", { maximumFractionDigits: 0 })} kr
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {h.andel.toFixed(1)} % av portefølje
@@ -200,7 +271,7 @@ export default async function Home() {
               </CardContent>
             </Card>
 
-            {/* Recent projects — mock */}
+            {/* Recent projects — live */}
             <Card className="bg-card border-border">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -208,50 +279,49 @@ export default async function Home() {
                   Siste prosjekter
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  Nylig oppdaterte (mock)
+                  Aktive oppgaver fra masterplan
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {recentProjects.map((p) => (
-                  <div
-                    key={p.id}
-                    className="rounded-md px-3 py-2.5 hover:bg-secondary/50 transition-colors"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">
-                          {p.name}
-                        </p>
-                        <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">
-                          {p.description}
-                        </p>
+              <CardContent className="space-y-1">
+                {recentProjects.length === 0 ? (
+                  <p className="py-4 text-center text-xs text-muted-foreground">
+                    Ingen aktive prosjekter funnet.
+                  </p>
+                ) : (
+                  recentProjects.map((p, i) => (
+                    <div
+                      key={i}
+                      className="rounded-md px-3 py-2.5 hover:bg-secondary/50 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">
+                            {p.oppgave ?? "—"}
+                          </p>
+                          {p.kategori && (
+                            <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">
+                              {p.kategori}
+                            </p>
+                          )}
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className={cn("shrink-0 text-[10px] border", statusBadgeClass(p.status))}
+                        >
+                          {statusBadgeLabel(p.status)}
+                        </Badge>
                       </div>
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "shrink-0 text-[10px] border",
-                          statusColor[p.status]
-                        )}
-                      >
-                        {p.status}
-                      </Badge>
+                      {p.fase && (
+                        <p className="mt-1 text-[10px] text-muted-foreground">{p.fase}</p>
+                      )}
                     </div>
-                    <div className="mt-2 h-1 w-full rounded-full bg-border">
-                      <div
-                        className="h-1 rounded-full bg-primary transition-all"
-                        style={{ width: `${p.progress}%` }}
-                      />
-                    </div>
-                    <p className="mt-1 text-[10px] text-muted-foreground">
-                      {p.progress}% fullført · {p.updatedAt}
-                    </p>
-                  </div>
-                ))}
+                  ))
+                )}
               </CardContent>
             </Card>
           </div>
 
-          {/* Recent AI logs — mock */}
+          {/* Recent AI logs — live */}
           <Card className="bg-card border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -259,43 +329,47 @@ export default async function Home() {
                 Siste AI-kall
               </CardTitle>
               <CardDescription className="text-xs">
-                Nyligste forespørsler til språkmodeller (mock)
+                Nyligste analyser fra Speideren
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="divide-y divide-border">
-                {recentLogs.map((log) => (
-                  <div
-                    key={log.id}
-                    className="flex items-start gap-4 py-3 first:pt-0 last:pb-0"
-                  >
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        "shrink-0 mt-0.5 text-[10px] border",
-                        logLevelColor[log.level]
-                      )}
+              {recentAiLogs.length === 0 ? (
+                <p className="py-4 text-center text-xs text-muted-foreground">
+                  Ingen AI-kall funnet.
+                </p>
+              ) : (
+                <div className="divide-y divide-border">
+                  {recentAiLogs.map((log) => (
+                    <div
+                      key={log.id}
+                      className="flex items-start gap-4 py-3 first:pt-0 last:pb-0"
                     >
-                      {log.level}
-                    </Badge>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground line-clamp-1">
-                        {log.prompt}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {log.model} · {log.tokensIn + log.tokensOut} tokens ·{" "}
-                        {log.durationMs}ms
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "shrink-0 mt-0.5 text-[10px] uppercase border",
+                          handlingBadgeClass(log.handling)
+                        )}
+                      >
+                        {log.handling ?? "—"}
+                      </Badge>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-primary">
+                          {log.ticker ?? "—"}
+                        </p>
+                        {log.detaljer && (
+                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                            {log.detaljer}
+                          </p>
+                        )}
+                      </div>
+                      <p className="shrink-0 text-[10px] text-muted-foreground tabular-nums">
+                        #{log.id}
                       </p>
                     </div>
-                    <p className="shrink-0 text-[10px] text-muted-foreground tabular-nums">
-                      {new Date(log.timestamp).toLocaleDateString("nb-NO", {
-                        day: "2-digit",
-                        month: "short",
-                      })}
-                    </p>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -303,6 +377,8 @@ export default async function Home() {
     </div>
   );
 }
+
+// ── StatCard ──────────────────────────────────────────────────────────────────
 
 function StatCard({
   icon,

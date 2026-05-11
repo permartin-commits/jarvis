@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "sonner";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -27,6 +28,7 @@ export default function RootLayout({
     <html lang="no" className="dark">
       <body className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}>
         <TooltipProvider>{children}</TooltipProvider>
+        <Toaster position="bottom-right" richColors theme="dark" />
       </body>
     </html>
   );
