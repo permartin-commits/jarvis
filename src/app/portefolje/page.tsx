@@ -11,25 +11,16 @@ import { cn } from "@/lib/utils";
 import { PortefoljeClient } from "./PortefoljeClient";
 
 export default async function PortefoljePage() {
-  let holdings    = await getPortfolioHoldings().catch(() => []);
-  let stats       = await getPortfolioStats().catch(() => ({
+  const holdings    = await getPortfolioHoldings().catch(() => []);
+  const stats       = await getPortfolioStats().catch(() => ({
     totalInvestert: 0,
     antallPosisjoner: 0,
     totalAvkastningNok: null as number | null,
     totalAvkastningPct: null as number | null,
   }));
-  let aiLogs      = await getLatestAiLogPerTicker().catch(() => []);
-  let watchlist   = await getWatchlistItems().catch(() => []);
-  let dbError: string | null = null;
-
-  // If all returned empty and holdings threw, surface the error
-  if (holdings.length === 0 && stats.totalInvestert === 0) {
-    try {
-      await getPortfolioHoldings();
-    } catch (err) {
-      dbError = err instanceof Error ? err.message : "Ukjent databasefeil";
-    }
-  }
+  const aiLogs      = await getLatestAiLogPerTicker().catch(() => []);
+  const watchlist   = await getWatchlistItems().catch(() => []);
+  const dbError: string | null = null;
 
   // Avkastning KPI formatting
   const avkStr = (() => {
