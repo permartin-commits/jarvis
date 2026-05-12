@@ -1,44 +1,66 @@
 import { Sidebar } from "@/components/sidebar";
-import { getPortfolioHoldings, getPortfolioStats, type PortfolioRow } from "@/lib/portfolio";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Coins, AlertCircle } from "lucide-react";
+  getPortfolioHoldings,
+  getPortfolioStats,
+  getLatestAiLogPerTicker,
+  getWatchlistItems,
+} from "@/lib/portfolio";
+import { Card, CardContent } from "@/components/ui/card";
+import { Coins, TrendingUp, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PortefoljeClient } from "./PortefoljeClient";
 
 export default async function PortefoljePage() {
-  let holdings: PortfolioRow[] = [];
-  let stats = { totalInvestert: 0, antallPosisjoner: 0 };
+  let holdings    = await getPortfolioHoldings().catch(() => []);
+  let stats       = await getPortfolioStats().catch(() => ({
+    totalInvestert: 0,
+    antallPosisjoner: 0,
+    totalAvkastningNok: null as number | null,
+    totalAvkastningPct: null as number | null,
+  }));
+  let aiLogs      = await getLatestAiLogPerTicker().catch(() => []);
+  let watchlist   = await getWatchlistItems().catch(() => []);
   let dbError: string | null = null;
 
-  try {
-    [holdings, stats] = await Promise.all([
-      getPortfolioHoldings(),
-      getPortfolioStats(),
-    ]);
-  } catch (err) {
-    dbError = err instanceof Error ? err.message : "Ukjent databasefeil";
+  // If all returned empty and holdings threw, surface the error
+  if (holdings.length === 0 && stats.totalInvestert === 0) {
+    try {
+      await getPortfolioHoldings();
+    } catch (err) {
+      dbError = err instanceof Error ? err.message : "Ukjent databasefeil";
+    }
   }
 
-  const topInvestert = holdings[0]?.investert ?? 0;
+  // Avkastning KPI formatting
+  const avkStr = (() => {
+    if (stats.totalAvkastningPct == null) return null;
+    const pct = stats.totalAvkastningPct;
+    const sign = pct > 0 ? "+" : "";
+    return `${sign}${pct.toLocaleString("nb-NO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`;
+  })();
+
+  const avkNokStr = (() => {
+    if (stats.totalAvkastningNok == null) return null;
+    const n = stats.totalAvkastningNok;
+    const sign = n > 0 ? "+" : "";
+    return `${sign}${n.toLocaleString("nb-NO", { maximumFractionDigits: 0 })} kr`;
+  })();
+
+  const avkPositive = (stats.totalAvkastningPct ?? 0) > 0;
+  const avkNegative = (stats.totalAvkastningPct ?? 0) < 0;
 
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto bg-background">
-        <div className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-sm px-8 py-4">
+      <main className="flex-1 overflow-y-auto bg-background pt-14 md:pt-0">
+        <div className="sticky top-14 md:top-0 z-10 border-b border-border bg-background/80 backdrop-blur-sm px-4 md:px-8 py-4">
           <h1 className="text-lg font-semibold text-foreground">Portefølje</h1>
           <p className="text-xs text-muted-foreground">
             Aksjer og investeringer — live fra PostgreSQL
           </p>
         </div>
 
-        <div className="px-8 py-6 space-y-6">
-          {/* DB-feil */}
+        <div className="px-4 md:px-8 py-6 space-y-6">
           {dbError && (
             <div className="flex items-start gap-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
               <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
@@ -49,112 +71,52 @@ export default async function PortefoljePage() {
             </div>
           )}
 
-          {/* Summary */}
+          {/* Summary cards */}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
             <SummaryCard
               label="Total investert"
-              value={`${stats.totalInvestert.toLocaleString("nb-NO", {
-                maximumFractionDigits: 0,
-              })} kr`}
+              value={`${stats.totalInvestert.toLocaleString("nb-NO", { maximumFractionDigits: 0 })} kr`}
               icon={<Coins className="h-4 w-4" />}
             />
             <SummaryCard
-              label="Antall posisjoner"
-              value={String(stats.antallPosisjoner)}
-              icon={<Coins className="h-4 w-4" />}
+              label="Total avkastning"
+              value={avkStr ?? "—"}
+              valueClass={
+                avkStr == null
+                  ? undefined
+                  : avkPositive
+                  ? "text-emerald-400"
+                  : avkNegative
+                  ? "text-red-400"
+                  : undefined
+              }
+              sub={avkNokStr ?? "Mangler siste_kurs"}
+              icon={<TrendingUp className="h-4 w-4" />}
             />
             <SummaryCard
               label="Største posisjon"
               value={
                 holdings[0]
-                  ? `${holdings[0].ticker} — ${topInvestert.toLocaleString("nb-NO", { maximumFractionDigits: 0 })} kr`
+                  ? `${holdings[0].ticker}`
                   : "—"
               }
-              icon={<Coins className="h-4 w-4" />}
+              sub={
+                holdings[0]
+                  ? `${holdings[0].investert.toLocaleString("nb-NO", { maximumFractionDigits: 0 })} kr`
+                  : undefined
+              }
+              icon={<TrendingUp className="h-4 w-4" />}
             />
           </div>
 
-          {/* Holdings table */}
-          <Card className="bg-card border-border">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold">
-                Alle posisjoner
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Sortert etter investert beløp (størst øverst)
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              {holdings.length === 0 && !dbError ? (
-                <p className="px-6 py-8 text-center text-sm text-muted-foreground">
-                  Ingen posisjoner funnet i tabellen <code className="font-mono">portfolio</code>.
-                </p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border">
-                        {["Ticker", "Antall", "Kjøpskurs", "Investert beløp", "Andel"].map(
-                          (h) => (
-                            <th
-                              key={h}
-                              className="px-4 py-3 text-left text-xs font-medium text-muted-foreground"
-                            >
-                              {h}
-                            </th>
-                          )
-                        )}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {holdings.map((h) => (
-                        <HoldingRow
-                          key={h.ticker}
-                          holding={h}
-                          totalInvestert={stats.totalInvestert}
-                        />
-                      ))}
-                    </tbody>
-                    {holdings.length > 0 && (
-                      <tfoot>
-                        <tr className="border-t border-border bg-secondary/20">
-                          <td colSpan={3} className="px-4 py-3 text-xs font-semibold text-muted-foreground">
-                            Totalt
-                          </td>
-                          <td className="px-4 py-3 text-sm font-bold text-foreground tabular-nums">
-                            {stats.totalInvestert.toLocaleString("nb-NO", {
-                              maximumFractionDigits: 0,
-                            })}{" "}
-                            kr
-                          </td>
-                          <td className="px-4 py-3 text-xs text-muted-foreground">100 %</td>
-                        </tr>
-                      </tfoot>
-                    )}
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Andelsfordeling */}
-          {holdings.length > 0 && (
-            <Card className="bg-card border-border">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold">
-                  Andelsfordeling
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Basert på investert beløp per ticker
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <AndelsFordelingChart
-                  holdings={holdings}
-                  totalInvestert={stats.totalInvestert}
-                />
-              </CardContent>
-            </Card>
+          {/* Holdings + Watchlist */}
+          {!dbError && (
+            <PortefoljeClient
+              holdings={holdings}
+              aiLogs={aiLogs}
+              totalInvestert={stats.totalInvestert}
+              watchlist={watchlist}
+            />
           )}
         </div>
       </main>
@@ -162,106 +124,17 @@ export default async function PortefoljePage() {
   );
 }
 
-function HoldingRow({
-  holding: h,
-  totalInvestert,
-}: {
-  holding: PortfolioRow;
-  totalInvestert: number;
-}) {
-  const andel = totalInvestert > 0 ? (h.investert / totalInvestert) * 100 : 0;
-
-  return (
-    <tr className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
-      <td className="px-4 py-3">
-        <div className="flex h-7 w-14 items-center justify-center rounded bg-primary/10 text-xs font-bold text-primary">
-          {h.ticker}
-        </div>
-      </td>
-      <td className="px-4 py-3 tabular-nums text-muted-foreground">
-        {h.antall.toLocaleString("nb-NO")}
-      </td>
-      <td className="px-4 py-3 tabular-nums text-muted-foreground">
-        {h.kjopskurs.toLocaleString("nb-NO", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })}{" "}
-        kr
-      </td>
-      <td className="px-4 py-3 tabular-nums font-semibold text-foreground">
-        {h.investert.toLocaleString("nb-NO", { maximumFractionDigits: 0 })} kr
-      </td>
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-2">
-          <div className="h-1.5 w-20 rounded-full bg-border">
-            <div
-              className="h-1.5 rounded-full bg-primary transition-all"
-              style={{ width: `${andel}%` }}
-            />
-          </div>
-          <span className="text-xs tabular-nums text-muted-foreground">
-            {andel.toFixed(1)} %
-          </span>
-        </div>
-      </td>
-    </tr>
-  );
-}
-
-function AndelsFordelingChart({
-  holdings,
-  totalInvestert,
-}: {
-  holdings: PortfolioRow[];
-  totalInvestert: number;
-}) {
-  const barColors = [
-    "bg-primary",
-    "bg-emerald-500",
-    "bg-yellow-500",
-    "bg-purple-500",
-    "bg-pink-500",
-    "bg-cyan-500",
-    "bg-orange-500",
-    "bg-teal-500",
-  ];
-
-  return (
-    <div className="space-y-3">
-      {holdings.map((h, i) => {
-        const pct = totalInvestert > 0 ? (h.investert / totalInvestert) * 100 : 0;
-        return (
-          <div key={h.ticker} className="space-y-1">
-            <div className="flex justify-between text-xs">
-              <span className="font-medium text-foreground">{h.ticker}</span>
-              <span className="tabular-nums text-muted-foreground">
-                {h.investert.toLocaleString("nb-NO", { maximumFractionDigits: 0 })} kr &middot;{" "}
-                {pct.toFixed(1)} %
-              </span>
-            </div>
-            <div className="h-1.5 w-full rounded-full bg-border">
-              <div
-                className={cn(
-                  "h-1.5 rounded-full transition-all",
-                  barColors[i % barColors.length]
-                )}
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 function SummaryCard({
   label,
   value,
+  valueClass,
+  sub,
   icon,
 }: {
   label: string;
   value: string;
+  valueClass?: string;
+  sub?: string;
   icon: React.ReactNode;
 }) {
   return (
@@ -273,7 +146,8 @@ function SummaryCard({
             {icon}
           </div>
         </div>
-        <p className="text-2xl font-bold text-foreground">{value}</p>
+        <p className={cn("text-2xl font-bold", valueClass ?? "text-foreground")}>{value}</p>
+        {sub && <p className="mt-1 text-xs text-muted-foreground">{sub}</p>}
       </CardContent>
     </Card>
   );

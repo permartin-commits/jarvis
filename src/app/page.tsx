@@ -1,142 +1,59 @@
 import { Sidebar } from "@/components/sidebar";
-import { getPortfolioHoldings, getPortfolioStats } from "@/lib/portfolio";
+import { cn } from "@/lib/utils";
+import { getPortfolioStats } from "@/lib/portfolio";
 import { query } from "@/lib/db";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
+  Coins,
   TrendingUp,
   FolderKanban,
   BrainCircuit,
-  Coins,
-  Activity,
   AlertCircle,
+  Zap,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-
-// ── Status / handling colour maps ─────────────────────────────────────────────
-
-const mappedStatusColor: Record<string, string> = {
-  "i gang":   "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-  ferdig:     "bg-blue-500/15 text-blue-400 border-blue-500/30",
-  planlagt:   "bg-purple-500/15 text-purple-400 border-purple-500/30",
-  "på vent":  "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
-  visjon:     "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
-  endgame:    "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
-};
-
-const mappedStatusLabel: Record<string, string> = {
-  "i gang":  "Aktiv",
-  ferdig:    "Fullført",
-  planlagt:  "Idé",
-  "på vent": "Pause",
-  visjon:    "Visjon",
-  endgame:   "Endgame",
-};
-
-const handlingColor: Record<string, string> = {
-  buy:      "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-  kjøp:     "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-  sell:     "bg-red-500/15 text-red-400 border-red-500/30",
-  salg:     "bg-red-500/15 text-red-400 border-red-500/30",
-  hold:     "bg-blue-500/15 text-blue-400 border-blue-500/30",
-  analyse:  "bg-purple-500/15 text-purple-400 border-purple-500/30",
-  alert:    "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
-};
-
-function handlingBadgeClass(handling: string | null): string {
-  if (!handling) return "bg-slate-500/15 text-slate-400 border-slate-500/30";
-  return handlingColor[handling.toLowerCase()] ?? "bg-slate-500/15 text-slate-400 border-slate-500/30";
-}
-
-function statusBadgeClass(status: string | null): string {
-  if (!status) return "bg-slate-500/15 text-slate-400 border-slate-500/30";
-  return mappedStatusColor[status.toLowerCase()] ?? "bg-slate-500/15 text-slate-400 border-slate-500/30";
-}
-
-function statusBadgeLabel(status: string | null): string {
-  if (!status) return "—";
-  return mappedStatusLabel[status.toLowerCase()] ?? status;
-}
 
 // ── Data fetchers ─────────────────────────────────────────────────────────────
 
-interface ProjectCounts { active: number; total: number }
-interface RecentProject { oppgave: string | null; kategori: string | null; status: string | null; fase: string | null }
-interface AiLogItem { id: number; ticker: string | null; handling: string | null; detaljer: string | null }
-
-async function getProjectCounts(): Promise<ProjectCounts> {
-  const [totalRes, activeRes] = await Promise.all([
-    query<{ count: string }>("SELECT COUNT(*) AS count FROM masterplan"),
-    query<{ count: string }>("SELECT COUNT(*) AS count FROM masterplan WHERE status = 'I gang'"),
-  ]);
-  return {
-    total: Number(totalRes.rows[0]?.count ?? 0),
-    active: Number(activeRes.rows[0]?.count ?? 0),
-  };
-}
-
-async function getRecentProjects(): Promise<RecentProject[]> {
-  const res = await query<RecentProject>(
-    `SELECT oppgave, kategori, status, fase
-     FROM masterplan
-     WHERE status = 'I gang' OR status = 'Aktiv'
-     LIMIT 3`
+async function getActiveProjectCount(): Promise<number> {
+  const res = await query<{ count: string }>(
+    "SELECT COUNT(*) AS count FROM masterplan WHERE status = 'I gang'"
   );
-  return res.rows;
-}
-
-async function getAiLogCount(): Promise<number> {
-  const res = await query<{ count: string }>("SELECT COUNT(*) AS count FROM ai_logger");
   return Number(res.rows[0]?.count ?? 0);
 }
 
-async function getRecentAiLogs(): Promise<AiLogItem[]> {
-  const res = await query<AiLogItem>(
-    `SELECT id, ticker, handling, detaljer
-     FROM ai_logger
-     ORDER BY id DESC
-     LIMIT 3`
+async function getAiLogCount(): Promise<number> {
+  const res = await query<{ count: string }>(
+    "SELECT COUNT(*) AS count FROM ai_logger"
   );
-  return res.rows;
+  return Number(res.rows[0]?.count ?? 0);
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function Home() {
-  // Portfolio — fail gracefully
-  let portfolioStats = { totalInvestert: 0, antallPosisjoner: 0 };
-  let topHoldings: { ticker: string; investert: number; andel: number }[] = [];
+  let totalInvestert = 0;
+  let totalAvkastningPct: number | null = null;
   let dbError: string | null = null;
 
-  // Live data — run all in parallel
-  const [projectCounts, recentProjects, aiLogCount, recentAiLogs] =
-    await Promise.all([
-      getProjectCounts().catch(() => ({ active: 0, total: 0 })),
-      getRecentProjects().catch(() => [] as RecentProject[]),
-      getAiLogCount().catch(() => 0),
-      getRecentAiLogs().catch(() => [] as AiLogItem[]),
-    ]);
+  const [activeProjects, aiLogCount] = await Promise.all([
+    getActiveProjectCount().catch(() => 0),
+    getAiLogCount().catch(() => 0),
+  ]);
 
   try {
-    const [stats, holdings] = await Promise.all([
-      getPortfolioStats(),
-      getPortfolioHoldings(),
-    ]);
-    portfolioStats = stats;
-    topHoldings = holdings.slice(0, 4).map((h) => ({
-      ticker: h.ticker,
-      investert: h.investert,
-      andel: stats.totalInvestert > 0 ? (h.investert / stats.totalInvestert) * 100 : 0,
-    }));
+    const stats = await getPortfolioStats();
+    totalInvestert     = stats.totalInvestert;
+    totalAvkastningPct = stats.totalAvkastningPct;
   } catch (err) {
     dbError = err instanceof Error ? err.message : "Ukjent databasefeil";
   }
+
+  const avkStr = totalAvkastningPct == null
+    ? "—"
+    : `${totalAvkastningPct > 0 ? "+" : ""}${totalAvkastningPct.toLocaleString("nb-NO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`;
 
   const timeOfDay = () => {
     const h = new Date().getHours();
@@ -150,16 +67,47 @@ export default async function Home() {
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
 
-      <main className="flex-1 overflow-y-auto bg-background">
-        {/* Header */}
-        <div className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-sm px-4 md:px-8 py-4">
-          <h1 className="text-lg font-semibold text-foreground">Oversikt</h1>
-          <p className="text-xs text-muted-foreground">
-            {timeOfDay()} — her er en snapshot av alt viktig.
-          </p>
-        </div>
+      <main className="flex-1 overflow-y-auto bg-background pt-14 md:pt-0">
+        <div className="px-4 md:px-8 py-8 md:py-10 space-y-8">
 
-        <div className="px-4 md:px-8 py-4 md:py-6 space-y-8">
+          {/* ── Jarvis Core ────────────────────────────────────────────── */}
+          <div className="flex flex-col items-center gap-5 pt-10 md:pt-14">
+            <JarvisOrb />
+
+            {/* JARVIS label */}
+            <div className="text-center space-y-1.5">
+              <h2 className="text-2xl font-bold tracking-[0.45em] uppercase bg-gradient-to-r from-primary via-primary/60 to-primary bg-clip-text text-transparent">
+                JARVIS
+              </h2>
+              <p className="text-[10px] tracking-[0.35em] uppercase text-muted-foreground/60">
+                Master OS
+              </p>
+            </div>
+
+            {/* Greeting */}
+            <p className="text-base font-medium text-foreground/75 text-center">
+              {timeOfDay()} Per Martin, hva vil du gjøre i dag?
+            </p>
+
+            {/* Input */}
+            <div className="w-full max-w-xl">
+              <div className="relative">
+                <input
+                  type="text"
+                  disabled
+                  placeholder="Snakk med Jarvis…"
+                  className="w-full rounded-full border border-primary/25 bg-primary/5 px-6 py-3.5 text-sm text-muted-foreground placeholder:text-muted-foreground/40 cursor-not-allowed outline-none ring-0 shadow-inner"
+                />
+                <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                  <BrainCircuit className="h-4 w-4 text-primary/30" />
+                </div>
+              </div>
+              <p className="mt-2 text-center text-[10px] text-muted-foreground/50">
+                Chat-funksjon under utvikling
+              </p>
+            </div>
+          </div>
+
           {/* DB error banner */}
           {dbError && (
             <div className="flex items-start gap-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
@@ -171,209 +119,155 @@ export default async function Home() {
             </div>
           )}
 
-          {/* KPI Cards */}
+          {/* ── 4 KPI Cards ────────────────────────────────────────────── */}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatCard
               icon={<Coins className="h-4 w-4" />}
-              label="Total investert"
+              label="Total Investert"
               value={
                 dbError
                   ? "—"
-                  : `${portfolioStats.totalInvestert.toLocaleString("nb-NO", { maximumFractionDigits: 0 })} kr`
+                  : `${totalInvestert.toLocaleString("nb-NO", { maximumFractionDigits: 0 })} kr`
               }
               sub={
-                dbError ? (
-                  <span className="text-xs text-red-400">DB utilgjengelig</span>
-                ) : (
-                  <span className="text-xs text-muted-foreground">
-                    {portfolioStats.antallPosisjoner} posisjoner
-                  </span>
-                )
+                dbError
+                  ? <span className="text-xs text-red-400">DB utilgjengelig</span>
+                  : <span className="text-xs text-muted-foreground">Fra portefølje</span>
+              }
+            />
+            <StatCard
+              icon={<TrendingUp className="h-4 w-4" />}
+              label="Avkastning"
+              value={avkStr}
+              valueClass={
+                totalAvkastningPct == null
+                  ? undefined
+                  : totalAvkastningPct > 0
+                  ? "text-emerald-400"
+                  : totalAvkastningPct < 0
+                  ? "text-red-400"
+                  : undefined
+              }
+              sub={
+                totalAvkastningPct == null
+                  ? <span className="text-xs text-muted-foreground">Mangler siste_kurs</span>
+                  : <span className="text-xs text-muted-foreground">Fra portefølje</span>
               }
             />
             <StatCard
               icon={<FolderKanban className="h-4 w-4" />}
-              label="Aktive prosjekter"
-              value={String(projectCounts.active)}
-              sub={
-                <span className="text-xs text-muted-foreground">
-                  av {projectCounts.total} totalt
-                </span>
-              }
+              label="Aktive Prosjekter"
+              value={String(activeProjects)}
+              sub={<span className="text-xs text-muted-foreground">Status «I gang»</span>}
             />
             <StatCard
               icon={<BrainCircuit className="h-4 w-4" />}
-              label="AI-analyser totalt"
+              label="AI-analyser Totalt"
               value={aiLogCount.toLocaleString("nb-NO")}
-              sub={
-                <span className="text-xs text-muted-foreground">
-                  alle kall fra Speideren
-                </span>
-              }
-            />
-            <StatCard
-              icon={<Activity className="h-4 w-4" />}
-              label="Masterplan-oppgaver"
-              value={String(projectCounts.total)}
-              sub={
-                <span className="text-xs text-muted-foreground">
-                  {projectCounts.active} i gang
-                </span>
-              }
+              sub={<span className="text-xs text-muted-foreground">Kall fra Speideren</span>}
             />
           </div>
 
-          {/* Main content grid */}
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* Top holdings — live */}
-            <Card className="bg-card border-border">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-primary" />
-                  Topp posisjoner
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Sortert etter investert beløp
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {dbError ? (
-                  <p className="py-4 text-center text-xs text-muted-foreground">
-                    Kunne ikke hente data fra databasen.
-                  </p>
-                ) : topHoldings.length === 0 ? (
-                  <p className="py-4 text-center text-xs text-muted-foreground">
-                    Ingen posisjoner funnet.
-                  </p>
-                ) : (
-                  topHoldings.map((h) => (
-                    <div
-                      key={h.ticker}
-                      className="flex items-center justify-between rounded-md px-3 py-2.5 hover:bg-secondary/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-10 items-center justify-center rounded-md bg-primary/10 text-xs font-bold text-primary">
-                          {h.ticker.slice(0, 4)}
-                        </div>
-                        <p className="text-sm font-medium text-foreground">{h.ticker}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-foreground">
-                          {h.investert.toLocaleString("nb-NO", { maximumFractionDigits: 0 })} kr
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {h.andel.toFixed(1)} % av portefølje
-                        </p>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Recent projects — live */}
-            <Card className="bg-card border-border">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <FolderKanban className="h-4 w-4 text-primary" />
-                  Siste prosjekter
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Aktive oppgaver fra masterplan
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-1">
-                {recentProjects.length === 0 ? (
-                  <p className="py-4 text-center text-xs text-muted-foreground">
-                    Ingen aktive prosjekter funnet.
-                  </p>
-                ) : (
-                  recentProjects.map((p, i) => (
-                    <div
-                      key={i}
-                      className="rounded-md px-3 py-2.5 hover:bg-secondary/50 transition-colors"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">
-                            {p.oppgave ?? "—"}
-                          </p>
-                          {p.kategori && (
-                            <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">
-                              {p.kategori}
-                            </p>
-                          )}
-                        </div>
-                        <Badge
-                          variant="outline"
-                          className={cn("shrink-0 text-[10px] border", statusBadgeClass(p.status))}
-                        >
-                          {statusBadgeLabel(p.status)}
-                        </Badge>
-                      </div>
-                      {p.fase && (
-                        <p className="mt-1 text-[10px] text-muted-foreground">{p.fase}</p>
-                      )}
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Recent AI logs — live */}
-          <Card className="bg-card border-border">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
-                <BrainCircuit className="h-4 w-4 text-primary" />
-                Siste AI-kall
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Nyligste analyser fra Speideren
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {recentAiLogs.length === 0 ? (
-                <p className="py-4 text-center text-xs text-muted-foreground">
-                  Ingen AI-kall funnet.
-                </p>
-              ) : (
-                <div className="divide-y divide-border">
-                  {recentAiLogs.map((log) => (
-                    <div
-                      key={log.id}
-                      className="flex items-start gap-4 py-3 first:pt-0 last:pb-0"
-                    >
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "shrink-0 mt-0.5 text-[10px] uppercase border",
-                          handlingBadgeClass(log.handling)
-                        )}
-                      >
-                        {log.handling ?? "—"}
-                      </Badge>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-primary">
-                          {log.ticker ?? "—"}
-                        </p>
-                        {log.detaljer && (
-                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                            {log.detaljer}
-                          </p>
-                        )}
-                      </div>
-                      <p className="shrink-0 text-[10px] text-muted-foreground tabular-nums">
-                        #{log.id}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
       </main>
+    </div>
+  );
+}
+
+// ── JarvisOrb ─────────────────────────────────────────────────────────────────
+
+function JarvisOrb() {
+  return (
+    <div
+      className="relative flex items-center justify-center select-none"
+      style={{ width: 200, height: 200 }}
+    >
+      {/* Ambient outer glow */}
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          background: "radial-gradient(circle, var(--primary) 0%, transparent 65%)",
+          opacity: 0.12,
+          filter: "blur(30px)",
+        }}
+      />
+
+      <svg
+        width="200"
+        height="200"
+        viewBox="0 0 200 200"
+        fill="none"
+        className="absolute inset-0"
+      >
+        <defs>
+          <radialGradient id="orbFill" cx="38%" cy="32%" r="65%">
+            <stop offset="0%"   style={{ stopColor: "var(--primary)", stopOpacity: 0.55 }} />
+            <stop offset="100%" style={{ stopColor: "var(--primary)", stopOpacity: 0.04 }} />
+          </radialGradient>
+          <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+          <filter id="coreBloom" x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur stdDeviation="7" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        {/* Ring 1 — outermost dotted + 4 tick marks, slow CW */}
+        <g>
+          <animateTransform attributeName="transform" type="rotate"
+            from="0 100 100" to="360 100 100" dur="32s" repeatCount="indefinite" />
+          <circle cx="100" cy="100" r="90"
+            style={{ stroke: "var(--primary)" }} strokeWidth="0.75" strokeDasharray="2 10" opacity="0.2" />
+          <line x1="100" y1="4"   x2="100" y2="17"  style={{ stroke: "var(--primary)" }} strokeWidth="1.5" opacity="0.55" />
+          <line x1="100" y1="183" x2="100" y2="196" style={{ stroke: "var(--primary)" }} strokeWidth="1.5" opacity="0.55" />
+          <line x1="4"   y1="100" x2="17"  y2="100" style={{ stroke: "var(--primary)" }} strokeWidth="1.5" opacity="0.55" />
+          <line x1="183" y1="100" x2="196" y2="100" style={{ stroke: "var(--primary)" }} strokeWidth="1.5" opacity="0.55" />
+        </g>
+
+        {/* Ring 2 — 4 arc segments, CCW */}
+        <g>
+          <animateTransform attributeName="transform" type="rotate"
+            from="0 100 100" to="-360 100 100" dur="18s" repeatCount="indefinite" />
+          {/* circ ≈ 465; dasharray 84+32=116, ×4=464 fills the circle evenly */}
+          <circle cx="100" cy="100" r="74"
+            style={{ stroke: "var(--primary)" }} strokeWidth="1.5" strokeDasharray="84 32" opacity="0.5" filter="url(#softGlow)" />
+        </g>
+
+        {/* Ring 3 — small dashes, CW medium */}
+        <g>
+          <animateTransform attributeName="transform" type="rotate"
+            from="0 100 100" to="360 100 100" dur="11s" repeatCount="indefinite" />
+          <circle cx="100" cy="100" r="59"
+            style={{ stroke: "var(--primary)" }} strokeWidth="0.75" strokeDasharray="6 5" opacity="0.28" />
+        </g>
+
+        {/* Ring 4 — solid inner ring, static */}
+        <circle cx="100" cy="100" r="47"
+          style={{ stroke: "var(--primary)" }} strokeWidth="1" opacity="0.5" filter="url(#softGlow)" />
+
+        {/* Crosshair */}
+        <line x1="64"  y1="100" x2="136" y2="100" style={{ stroke: "var(--primary)" }} strokeWidth="0.5" opacity="0.18" />
+        <line x1="100" y1="64"  x2="100" y2="136" style={{ stroke: "var(--primary)" }} strokeWidth="0.5" opacity="0.18" />
+
+        {/* Core fill */}
+        <circle cx="100" cy="100" r="47" fill="url(#orbFill)" filter="url(#coreBloom)" />
+      </svg>
+
+      {/* Lightning bolt icon */}
+      <div
+        className="relative z-10 flex items-center justify-center"
+        style={{ filter: "drop-shadow(0 0 6px var(--primary)) drop-shadow(0 0 16px var(--primary))" }}
+      >
+        <Zap className="text-primary" style={{ width: 26, height: 26 }} strokeWidth={1.5} />
+      </div>
     </div>
   );
 }
@@ -384,11 +278,13 @@ function StatCard({
   icon,
   label,
   value,
+  valueClass,
   sub,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
+  valueClass?: string;
   sub: React.ReactNode;
 }) {
   return (
@@ -400,7 +296,7 @@ function StatCard({
             {icon}
           </div>
         </div>
-        <p className="text-2xl font-bold text-foreground">{value}</p>
+        <p className={cn("text-2xl font-bold", valueClass ?? "text-foreground")}>{value}</p>
         <div className="mt-1">{sub}</div>
       </CardContent>
     </Card>

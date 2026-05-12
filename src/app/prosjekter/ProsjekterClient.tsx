@@ -10,13 +10,12 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Tag, Pencil, X, ChevronDown, BrainCircuit } from "lucide-react";
+import { Tag, Pencil, X, ChevronDown, BrainCircuit, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 const WEBHOOK_START =
   "https://pia.verlanse.no/webhook/5fc9c8e5-df40-4d2b-ba17-b52a5c0e5924";
 
-// Replace with dedicated webhook URL when PIA review flow is set up in n8n
 const WEBHOOK_ASK_PIA =
   "https://pia.verlanse.no/webhook/5fc9c8e5-df40-4d2b-ba17-b52a5c0e5924";
 
@@ -67,6 +66,20 @@ const statusConfig: Record<
 };
 
 const DB_STATUSES = ["I gang", "Planlagt", "Ferdig", "På vent", "Visjon", "Endgame"];
+
+// ── Shared styles ──────────────────────────────────────────────────────────────
+
+const inputCls =
+  "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50";
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-xs font-medium text-muted-foreground">{label}</label>
+      {children}
+    </div>
+  );
+}
 
 // ── Edit Modal ────────────────────────────────────────────────────────────────
 
@@ -142,10 +155,7 @@ function EditModal({
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      {/* Panel — wider to accommodate prosjektplan */}
       <div className="w-full sm:max-w-2xl rounded-xl border border-border bg-card shadow-2xl flex flex-col max-h-[90dvh]">
-
-        {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
           <h2 className="text-sm font-semibold text-foreground">Rediger oppgave</h2>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
@@ -153,20 +163,12 @@ function EditModal({
           </button>
         </div>
 
-        {/* Scrollable body */}
         <div className="overflow-y-auto px-5 py-4 space-y-4 flex-1">
-
-          {/* Top row: oppgave + fase + status */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-1">
               <Field label="Fase">
-                <input
-                  type="text"
-                  value={fase}
-                  onChange={(e) => setFase(e.target.value)}
-                  placeholder="f.eks. 1. Infrastruktur"
-                  className={inputCls}
-                />
+                <input type="text" value={fase} onChange={(e) => setFase(e.target.value)}
+                  placeholder="f.eks. 1. Infrastruktur" className={inputCls} />
               </Field>
             </div>
             <div className="sm:col-span-1">
@@ -180,82 +182,49 @@ function EditModal({
             </div>
             <div className="sm:col-span-1">
               <Field label="Prioritet">
-                <input
-                  type="text"
-                  value={project.prioritet ?? ""}
-                  readOnly
-                  className={cn(inputCls, "opacity-50 cursor-not-allowed")}
-                />
+                <input type="text" value={project.prioritet ?? ""} readOnly
+                  className={cn(inputCls, "opacity-50 cursor-not-allowed")} />
               </Field>
             </div>
           </div>
 
           <Field label="Heading (oppgave)">
-            <input
-              type="text"
-              value={oppgave}
-              onChange={(e) => setOppgave(e.target.value)}
-              className={inputCls}
-            />
+            <input type="text" value={oppgave} onChange={(e) => setOppgave(e.target.value)} className={inputCls} />
           </Field>
 
           <Field label="Beskrivelse (kategori)">
-            <textarea
-              rows={2}
-              value={kategori}
-              onChange={(e) => setKategori(e.target.value)}
-              className={cn(inputCls, "resize-none")}
-            />
+            <textarea rows={2} value={kategori} onChange={(e) => setKategori(e.target.value)}
+              className={cn(inputCls, "resize-none")} />
           </Field>
 
-          {/* Prosjektplan — main editable area */}
           <Field label="Prosjektplan">
-            <textarea
-              rows={8}
-              value={prosjektplan}
-              onChange={(e) => setProsjektplan(e.target.value)}
+            <textarea rows={8} value={prosjektplan} onChange={(e) => setProsjektplan(e.target.value)}
               placeholder="Skriv eller rediger prosjektplanen her…"
-              className={cn(inputCls, "resize-y font-mono text-xs leading-relaxed")}
-            />
+              className={cn(inputCls, "resize-y font-mono text-xs leading-relaxed")} />
           </Field>
 
-          {/* AI Logg accordion */}
           {hasAiContent && (
             <div className="rounded-lg border border-border overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setAiLogOpen((o) => !o)}
-                className="flex w-full items-center justify-between px-4 py-3 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/30 transition-colors"
-              >
+              <button type="button" onClick={() => setAiLogOpen((o) => !o)}
+                className="flex w-full items-center justify-between px-4 py-3 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/30 transition-colors">
                 <span className="flex items-center gap-2">
                   <BrainCircuit className="h-3.5 w-3.5 text-primary" />
                   AI Logg
                 </span>
-                <ChevronDown
-                  className={cn("h-3.5 w-3.5 transition-transform", aiLogOpen && "rotate-180")}
-                />
+                <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", aiLogOpen && "rotate-180")} />
               </button>
-
               {aiLogOpen && (
                 <div className="border-t border-border divide-y divide-border">
                   {project.ai_utkast && (
                     <div className="px-4 py-3 space-y-1">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-primary/70">
-                        AI Utkast
-                      </p>
-                      <pre className="whitespace-pre-wrap text-xs text-foreground/70 font-mono leading-relaxed">
-                        {project.ai_utkast}
-                      </pre>
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-primary/70">AI Utkast</p>
+                      <pre className="whitespace-pre-wrap text-xs text-foreground/70 font-mono leading-relaxed">{project.ai_utkast}</pre>
                     </div>
                   )}
                   {project.pia_kritikk && (
                     <div className="px-4 py-3 space-y-1">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-yellow-400/70">
-                        PIA Kritikk
-                      </p>
-                      <pre className="whitespace-pre-wrap text-xs text-foreground/70 font-mono leading-relaxed">
-                        {project.pia_kritikk}
-                      </pre>
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-yellow-400/70">PIA Kritikk</p>
+                      <pre className="whitespace-pre-wrap text-xs text-foreground/70 font-mono leading-relaxed">{project.pia_kritikk}</pre>
                     </div>
                   )}
                 </div>
@@ -266,31 +235,19 @@ function EditModal({
           {error && <p className="text-xs text-red-400">{error}</p>}
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-between gap-3 px-5 py-4 border-t border-border shrink-0">
-          {/* Ask PIA */}
-          <button
-            type="button"
-            onClick={handleAskPia}
-            disabled={askingPia || !prosjektplan.trim()}
-            className="flex items-center gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
+          <button type="button" onClick={handleAskPia} disabled={askingPia || !prosjektplan.trim()}
+            className="flex items-center gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
             <BrainCircuit className="h-3.5 w-3.5" />
             {askingPia ? "Sender til PIA…" : "🧠 Ask PIA / Revurder"}
           </button>
-
           <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="rounded-md border border-border bg-transparent px-4 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
+            <button onClick={onClose}
+              className="rounded-md border border-border bg-transparent px-4 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
               Avbryt
             </button>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="rounded-md bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
-            >
+            <button onClick={handleSave} disabled={saving}
+              className="rounded-md bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors">
               {saving ? "Lagrer…" : "Lagre"}
             </button>
           </div>
@@ -300,14 +257,119 @@ function EditModal({
   );
 }
 
-const inputCls =
-  "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50";
+// ── New Project Modal ─────────────────────────────────────────────────────────
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function NewProjectModal({
+  onClose,
+  onCreated,
+}: {
+  onClose: () => void;
+  onCreated: (row: MasterplanRow) => void;
+}) {
+  const [fase, setFase]                 = useState("");
+  const [oppgave, setOppgave]           = useState("");
+  const [kategori, setKategori]         = useState("");
+  const [prosjektplan, setProsjektplan] = useState("");
+  const [status, setStatus]             = useState("Planlagt");
+  const [saving, setSaving]             = useState(false);
+  const [error, setError]               = useState<string | null>(null);
+
+  async function handleCreate() {
+    if (!oppgave.trim()) {
+      setError("Heading (oppgave) er påkrevd.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/masterplan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fase, oppgave, kategori, prosjektplan, status }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Noe gikk galt");
+      }
+      const created: MasterplanRow = await res.json();
+      onCreated(created);
+      toast.success(`Prosjekt opprettet: ${created.oppgave}`);
+      onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Ukjent feil");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
-    <div className="space-y-1.5">
-      <label className="text-xs font-medium text-muted-foreground">{label}</label>
-      {children}
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="w-full sm:max-w-xl rounded-xl border border-border bg-card shadow-2xl flex flex-col max-h-[90dvh]">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/15">
+              <Plus className="h-3.5 w-3.5 text-primary" />
+            </div>
+            <h2 className="text-sm font-semibold text-foreground">Nytt prosjekt</h2>
+          </div>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="overflow-y-auto px-5 py-4 space-y-4 flex-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Fase">
+              <input type="text" value={fase} onChange={(e) => setFase(e.target.value)}
+                placeholder="f.eks. 1. Infrastruktur" className={inputCls} />
+            </Field>
+            <Field label="Status">
+              <select value={status} onChange={(e) => setStatus(e.target.value)} className={inputCls}>
+                {DB_STATUSES.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </Field>
+          </div>
+
+          <Field label="Heading *">
+            <input type="text" value={oppgave} onChange={(e) => setOppgave(e.target.value)}
+              placeholder="Tittel på prosjektet" className={inputCls} />
+          </Field>
+
+          <Field label="Beskrivelse">
+            <textarea rows={2} value={kategori} onChange={(e) => setKategori(e.target.value)}
+              placeholder="Kort beskrivelse eller kategori"
+              className={cn(inputCls, "resize-none")} />
+          </Field>
+
+          <Field label="Prosjektplan">
+            <textarea rows={6} value={prosjektplan} onChange={(e) => setProsjektplan(e.target.value)}
+              placeholder="Skriv prosjektplanen her…"
+              className={cn(inputCls, "resize-y font-mono text-xs leading-relaxed")} />
+          </Field>
+
+          {error && <p className="text-xs text-red-400">{error}</p>}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-border shrink-0">
+          <button onClick={onClose}
+            className="rounded-md border border-border bg-transparent px-4 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+            Avbryt
+          </button>
+          <button onClick={handleCreate} disabled={saving}
+            className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors">
+            <Plus className="h-3.5 w-3.5" />
+            {saving ? "Oppretter…" : "Opprett prosjekt"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -319,13 +381,12 @@ export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] 
   const [faseFilter, setFase]     = useState<string>("alle");
   const [statusFilter, setStatus] = useState<string>("alle");
   const [editing, setEditing]     = useState<MasterplanRow | null>(null);
+  const [creating, setCreating]   = useState(false);
   const [startingIds, setStartingIds] = useState<Set<number>>(new Set());
 
   async function handleStartProject(p: MappedProject) {
     setStartingIds((prev) => new Set(prev).add(p.id));
-
     try {
-      // 1. Update status in DB
       const patchRes = await fetch(`/api/masterplan/${p.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -333,24 +394,12 @@ export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] 
       });
       if (!patchRes.ok) throw new Error("Kunne ikke oppdatere status");
       const updated: MasterplanRow = await patchRes.json();
-
-      // Optimistic UI update
       setRows((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
-
-      // 2. Trigger n8n webhook (fire-and-forget — don't block on failure)
       fetch(WEBHOOK_START, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: p.id,
-          oppgave: p.oppgave,
-          fase: p.fase,
-          kategori: p.kategori,
-        }),
-      }).catch(() => {
-        // webhook failure is non-critical
-      });
-
+        body: JSON.stringify({ id: p.id, oppgave: p.oppgave, fase: p.fase, kategori: p.kategori }),
+      }).catch(() => {});
       toast.success(`Prosjekt startet: ${p.oppgave ?? p.id}`, {
         description: "Status satt til «I gang» og The Night Shift er varslet.",
       });
@@ -380,7 +429,8 @@ export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] 
   const visible = useMemo(() => {
     return projects.filter((p) => {
       const faseOk   = faseFilter === "alle" || p.fase === faseFilter;
-      const statusOk = statusFilter === "alle" || p.mappedStatus === statusFilter || (statusFilter === "pause" && p.mappedStatus === "visjon");
+      const statusOk = statusFilter === "alle" || p.mappedStatus === statusFilter
+        || (statusFilter === "pause" && p.mappedStatus === "visjon");
       return faseOk && statusOk;
     });
   }, [projects, faseFilter, statusFilter]);
@@ -389,37 +439,42 @@ export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] 
     setRows((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
   }
 
+  function handleCreated(created: MasterplanRow) {
+    setRows((prev) => [...prev, created]);
+  }
+
   return (
     <>
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-8">
-        {/* Fase dropdown */}
-        <select
-          value={faseFilter}
-          onChange={(e) => setFase(e.target.value)}
-          className={cn(selectCls, "min-w-[180px]")}
-        >
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-3 mb-8">
+        <select value={faseFilter} onChange={(e) => setFase(e.target.value)}
+          className={cn(selectCls, "min-w-[180px]")}>
           <option value="alle">Alle faser</option>
           {uniqueFaser.map((f) => (
             <option key={f} value={f}>{f}</option>
           ))}
         </select>
 
-        {/* Status dropdown */}
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatus(e.target.value)}
-          className={cn(selectCls, "min-w-[160px]")}
-        >
+        <select value={statusFilter} onChange={(e) => setStatus(e.target.value)}
+          className={cn(selectCls, "min-w-[160px]")}>
           <option value="alle">Alle statuser</option>
           {(["aktiv", "pause", "idé", "fullført"] as MappedStatus[]).map((s) => (
             <option key={s} value={s}>{statusConfig[s].label}</option>
           ))}
         </select>
 
-        <span className="self-center text-xs text-muted-foreground">
+        <span className="flex-1 self-center text-xs text-muted-foreground">
           {visible.length} av {rows.length} oppgaver
         </span>
+
+        {/* ── Add New button ─────────────────────────────────────────── */}
+        <button
+          onClick={() => setCreating(true)}
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Legg til ny
+        </button>
       </div>
 
       {/* Cards grid */}
@@ -427,19 +482,15 @@ export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] 
         {visible.map((p) => {
           const cfg = statusConfig[p.mappedStatus];
           return (
-            <Card
-              key={p.id}
+            <Card key={p.id}
               className={cn(
                 "border-border flex flex-col hover:border-primary/30 transition-colors relative",
                 cfg.cardBg
               )}
             >
-              {/* Edit button */}
-              <button
-                onClick={() => setEditing(p)}
+              <button onClick={() => setEditing(p)}
                 className="absolute top-3 right-3 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
-                title="Rediger"
-              >
+                title="Rediger">
                 <Pencil className="h-3.5 w-3.5" />
               </button>
 
@@ -448,44 +499,31 @@ export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] 
                   <CardTitle className="text-sm font-semibold text-foreground leading-snug">
                     {p.oppgave ?? "—"}
                   </CardTitle>
-                  <Badge
-                    variant="outline"
-                    className={cn("shrink-0 text-[10px] border", cfg.badge)}
-                  >
+                  <Badge variant="outline" className={cn("shrink-0 text-[10px] border", cfg.badge)}>
                     {cfg.label}
                   </Badge>
                 </div>
                 {p.kategori && (
-                  <CardDescription className="text-xs mt-1">
-                    {p.kategori}
-                  </CardDescription>
+                  <CardDescription className="text-xs mt-1">{p.kategori}</CardDescription>
                 )}
               </CardHeader>
 
               <CardContent className="flex-1 flex flex-col justify-between gap-4">
-                {/* Fase tag */}
                 {p.fase && (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Tag className="h-3.5 w-3.5 shrink-0" />
                     <span>{p.fase}</span>
                   </div>
                 )}
-
-                {/* Action button */}
                 {p.mappedStatus === "idé" && (
-                  <button
-                    onClick={() => handleStartProject(p)}
-                    disabled={startingIds.has(p.id)}
-                    className="w-full rounded-md border border-purple-500/40 bg-purple-500/10 px-3 py-2 text-xs font-semibold text-purple-300 hover:bg-purple-500/20 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-                  >
+                  <button onClick={() => handleStartProject(p)} disabled={startingIds.has(p.id)}
+                    className="w-full rounded-md border border-purple-500/40 bg-purple-500/10 px-3 py-2 text-xs font-semibold text-purple-300 hover:bg-purple-500/20 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
                     {startingIds.has(p.id) ? "Starter The Night Shift…" : "🚀 START PROSJEKT"}
                   </button>
                 )}
                 {p.mappedStatus === "aktiv" && (
-                  <button
-                    onClick={() => console.log("ASK PIA:", p.oppgave, p.id)}
-                    className="w-full rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20 transition-colors"
-                  >
+                  <button onClick={() => console.log("ASK PIA:", p.oppgave, p.id)}
+                    className="w-full rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20 transition-colors">
                     🧠 ASK PIA
                   </button>
                 )}
@@ -503,11 +541,12 @@ export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] 
 
       {/* Edit modal */}
       {editing && (
-        <EditModal
-          project={editing}
-          onClose={() => setEditing(null)}
-          onSaved={handleSaved}
-        />
+        <EditModal project={editing} onClose={() => setEditing(null)} onSaved={handleSaved} />
+      )}
+
+      {/* New project modal */}
+      {creating && (
+        <NewProjectModal onClose={() => setCreating(false)} onCreated={handleCreated} />
       )}
     </>
   );

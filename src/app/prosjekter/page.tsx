@@ -17,8 +17,8 @@ export default async function ProsjekterPage() {
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto bg-background">
-        <div className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-sm px-4 md:px-8 py-4">
+      <main className="flex-1 overflow-y-auto bg-background pt-14 md:pt-0">
+        <div className="sticky top-14 md:top-0 z-10 border-b border-border bg-background/80 backdrop-blur-sm px-4 md:px-8 py-4">
           <h1 className="text-lg font-semibold text-foreground">Prosjekter</h1>
           <p className="text-xs text-muted-foreground">
             Live data fra <code className="font-mono">masterplan</code>-tabellen i Supabase ·{" "}
