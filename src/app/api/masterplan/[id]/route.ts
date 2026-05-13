@@ -10,14 +10,14 @@ export async function PATCH(
     return NextResponse.json({ error: "Ugyldig id" }, { status: 400 });
   }
 
-  let body: { oppgave?: string; kategori?: string; status?: string; fase?: string; prosjektplan?: string };
+  let body: { oppgave?: string; kategori?: string; status?: string; fase?: string; prosjektplan?: string; prioritet?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Ugyldig JSON" }, { status: 400 });
   }
 
-  const { oppgave, kategori, status, fase, prosjektplan } = body;
+  const { oppgave, kategori, status, fase, prosjektplan, prioritet } = body;
 
   const setClauses: string[] = [];
   const values: unknown[] = [];
@@ -28,6 +28,7 @@ export async function PATCH(
   if (status       !== undefined) { setClauses.push(`status = $${idx++}`);       values.push(status); }
   if (fase         !== undefined) { setClauses.push(`fase = $${idx++}`);         values.push(fase); }
   if (prosjektplan !== undefined) { setClauses.push(`prosjektplan = $${idx++}`); values.push(prosjektplan); }
+  if (prioritet    !== undefined) { setClauses.push(`prioritet = $${idx++}`);    values.push(prioritet); }
 
   if (setClauses.length === 0) {
     return NextResponse.json({ error: "Ingen felter å oppdatere" }, { status: 400 });

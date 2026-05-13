@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Tag, Pencil, X, ChevronDown, BrainCircuit, Plus } from "lucide-react";
+import { Tag, Pencil, X, ChevronDown, BrainCircuit, Plus, LayoutGrid, Table2, Check, ChevronsUpDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 
 const WEBHOOK_START =
@@ -96,6 +96,7 @@ function EditModal({
   const [kategori, setKategori]         = useState(project.kategori ?? "");
   const [status, setStatus]             = useState(project.status ?? "");
   const [fase, setFase]                 = useState(project.fase ?? "");
+  const [prioritet, setPrioritet]       = useState(project.prioritet ?? "");
   const [prosjektplan, setProsjektplan] = useState(project.prosjektplan ?? "");
   const [saving, setSaving]             = useState(false);
   const [askingPia, setAskingPia]       = useState(false);
@@ -111,7 +112,7 @@ function EditModal({
       const res = await fetch(`/api/masterplan/${project.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ oppgave, kategori, status, fase, prosjektplan }),
+        body: JSON.stringify({ oppgave, kategori, status, fase, prioritet, prosjektplan }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -182,8 +183,8 @@ function EditModal({
             </div>
             <div className="sm:col-span-1">
               <Field label="Prioritet">
-                <input type="text" value={project.prioritet ?? ""} readOnly
-                  className={cn(inputCls, "opacity-50 cursor-not-allowed")} />
+                <input type="text" value={prioritet} onChange={(e) => setPrioritet(e.target.value)}
+                  placeholder="f.eks. Høy" className={inputCls} />
               </Field>
             </div>
           </div>
@@ -374,6 +375,282 @@ function NewProjectModal({
   );
 }
 
+// ── Table row with inline editing ─────────────────────────────────────────────
+
+function TableRow({
+  p,
+  onSaved,
+  onEdit,
+}: {
+  p: MappedProject;
+  onSaved: (updated: MasterplanRow) => void;
+  onEdit: (p: MappedProject) => void;
+}) {
+  const [editing,   setEditing]   = useState(false);
+  const [oppgave,   setOppgave]   = useState(p.oppgave   ?? "");
+  const [fase,      setFase]      = useState(p.fase      ?? "");
+  const [status,    setStatus]    = useState(p.status    ?? "");
+  const [kategori,  setKategori]  = useState(p.kategori  ?? "");
+  const [prioritet, setPrioritet] = useState(p.prioritet ?? "");
+  const [saving,    setSaving]    = useState(false);
+  // tracks which text fields are expanded beyond 200 chars
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  const cfg = statusConfig[p.mappedStatus];
+
+  function toggleExpand(field: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      next.has(field) ? next.delete(field) : next.add(field);
+      return next;
+    });
+  }
+
+  /** Renders a text value with 200-char truncation + click-to-expand */
+  function TruncatedText({ field, value, className }: { field: string; value: string | null; className?: string }) {
+    const text = value ?? "—";
+    const isLong = text.length > 200;
+    const isOpen = expanded.has(field);
+    return (
+      <span className={cn("break-words whitespace-pre-wrap", className)}>
+        {isLong && !isOpen ? (
+          <>
+            {text.slice(0, 200)}
+            <button
+              type="button"
+              onClick={() => toggleExpand(field)}
+              className="ml-1 text-primary/70 hover:text-primary text-[10px] font-semibold"
+            >
+              … vis mer
+            </button>
+          </>
+        ) : (
+          <>
+            {text}
+            {isLong && isOpen && (
+              <button
+                type="button"
+                onClick={() => toggleExpand(field)}
+                className="ml-1 text-primary/70 hover:text-primary text-[10px] font-semibold"
+              >
+                vis mindre
+              </button>
+            )}
+          </>
+        )}
+      </span>
+    );
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/masterplan/${p.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ oppgave, fase, status, kategori, prioritet }),
+      });
+      if (!res.ok) throw new Error("Lagring feilet");
+      const updated: MasterplanRow = await res.json();
+      onSaved(updated);
+      toast.success("Lagret");
+      setEditing(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Ukjent feil");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleCancel() {
+    setOppgave  (p.oppgave   ?? "");
+    setFase     (p.fase      ?? "");
+    setStatus   (p.status    ?? "");
+    setKategori (p.kategori  ?? "");
+    setPrioritet(p.prioritet ?? "");
+    setEditing(false);
+  }
+
+  const cellCls = "px-3 py-2.5 text-sm align-top";
+  const inlineCls =
+    "w-full rounded border border-primary/40 bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50";
+
+  return (
+    <tr className={cn("border-b border-border/50 transition-colors", editing ? "bg-primary/5" : "hover:bg-secondary/20")}>
+      {/* ID */}
+      <td className={cn(cellCls, "text-xs text-muted-foreground w-10 align-middle")}>{p.id}</td>
+
+      {/* Oppgave */}
+      <td className={cn(cellCls, "w-[220px] max-w-[220px]")}>
+        {editing ? (
+          <input value={oppgave} onChange={(e) => setOppgave(e.target.value)} className={inlineCls} />
+        ) : (
+          <TruncatedText field="oppgave" value={p.oppgave} className="text-sm font-medium text-foreground" />
+        )}
+      </td>
+
+      {/* Fase */}
+      <td className={cn(cellCls, "w-[140px] max-w-[140px]")}>
+        {editing ? (
+          <input value={fase} onChange={(e) => setFase(e.target.value)} className={inlineCls} />
+        ) : (
+          <TruncatedText field="fase" value={p.fase} className="text-xs text-muted-foreground" />
+        )}
+      </td>
+
+      {/* Status */}
+      <td className={cn(cellCls, "w-[120px] align-middle")}>
+        {editing ? (
+          <select value={status} onChange={(e) => setStatus(e.target.value)} className={inlineCls}>
+            {DB_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        ) : (
+          <span className={cn("inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", cfg.badge)}>
+            <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", cfg.dot)} />
+            {cfg.label}
+          </span>
+        )}
+      </td>
+
+      {/* Kategori */}
+      <td className={cn(cellCls, "w-[240px] max-w-[240px]")}>
+        {editing ? (
+          <input value={kategori} onChange={(e) => setKategori(e.target.value)} className={inlineCls} />
+        ) : (
+          <TruncatedText field="kategori" value={p.kategori} className="text-xs text-muted-foreground" />
+        )}
+      </td>
+
+      {/* Prioritet */}
+      <td className={cn(cellCls, "w-[100px] max-w-[100px]")}>
+        {editing ? (
+          <input value={prioritet} onChange={(e) => setPrioritet(e.target.value)}
+            placeholder="f.eks. Høy" className={inlineCls} />
+        ) : (
+          <TruncatedText field="prioritet" value={p.prioritet} className="text-xs text-muted-foreground" />
+        )}
+      </td>
+
+      {/* Actions */}
+      <td className={cn(cellCls, "w-[100px]")}>
+        {editing ? (
+          <div className="flex items-center gap-1.5">
+            <button onClick={handleSave} disabled={saving}
+              className="flex items-center gap-1 rounded border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-[10px] font-semibold text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-50 transition-colors">
+              <Check className="h-3 w-3" />
+              {saving ? "…" : "Lagre"}
+            </button>
+            <button onClick={handleCancel}
+              className="rounded border border-border px-2 py-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors">
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => setEditing(true)}
+              className="rounded border border-border px-2 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors">
+              <Pencil className="h-3 w-3" />
+            </button>
+            <button onClick={() => onEdit(p)}
+              className="rounded border border-border px-2 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+              title="Åpne i fullskjerm modal">
+              <ChevronDown className="h-3 w-3 -rotate-90" />
+            </button>
+          </div>
+        )}
+      </td>
+    </tr>
+  );
+}
+
+type SortKey = "id" | "oppgave" | "fase" | "status" | "kategori" | "prioritet";
+type SortDir = "asc" | "desc";
+
+function TableView({
+  visible,
+  onSaved,
+  onEdit,
+}: {
+  visible: MappedProject[];
+  onSaved: (updated: MasterplanRow) => void;
+  onEdit: (p: MappedProject) => void;
+}) {
+  const [sortKey, setSortKey] = useState<SortKey>("id");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  function handleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  }
+
+  const sorted = useMemo(() => {
+    return [...visible].sort((a, b) => {
+      const av = (a[sortKey] ?? "").toString().toLowerCase();
+      const bv = (b[sortKey] ?? "").toString().toLowerCase();
+      // numeric sort for id
+      if (sortKey === "id") {
+        return sortDir === "asc" ? a.id - b.id : b.id - a.id;
+      }
+      return sortDir === "asc" ? av.localeCompare(bv, "nb") : bv.localeCompare(av, "nb");
+    });
+  }, [visible, sortKey, sortDir]);
+
+  function SortIcon({ col }: { col: SortKey }) {
+    if (sortKey !== col) return <ChevronsUpDown className="h-3 w-3 opacity-30" />;
+    return sortDir === "asc"
+      ? <ChevronUp className="h-3 w-3 text-primary" />
+      : <ChevronDown className="h-3 w-3 text-primary" />;
+  }
+
+  const cols: { key: SortKey; label: string }[] = [
+    { key: "id",        label: "#" },
+    { key: "oppgave",   label: "Oppgave" },
+    { key: "fase",      label: "Fase" },
+    { key: "status",    label: "Status" },
+    { key: "kategori",  label: "Kategori" },
+    { key: "prioritet", label: "Prioritet" },
+  ];
+
+  return (
+    <div className="rounded-lg border border-border overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="border-b border-border bg-secondary/30">
+              {cols.map(({ key, label }) => (
+                <th key={key}
+                  onClick={() => handleSort(key)}
+                  className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors"
+                >
+                  <span className="flex items-center gap-1">
+                    {label}
+                    <SortIcon col={key} />
+                  </span>
+                </th>
+              ))}
+              <th className="px-3 py-2.5 w-[100px]" />
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((p) => (
+              <TableRow key={p.id} p={p} onSaved={onSaved} onEdit={onEdit} />
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {visible.length === 0 && (
+        <p className="py-10 text-center text-sm text-muted-foreground">
+          Ingen oppgaver matcher valgt filter.
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] }) {
@@ -383,6 +660,7 @@ export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] 
   const [editing, setEditing]     = useState<MasterplanRow | null>(null);
   const [creating, setCreating]   = useState(false);
   const [startingIds, setStartingIds] = useState<Set<number>>(new Set());
+  const [viewMode, setViewMode]   = useState<"cards" | "table">("cards");
 
   async function handleStartProject(p: MappedProject) {
     setStartingIds((prev) => new Set(prev).add(p.id));
@@ -467,6 +745,35 @@ export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] 
           {visible.length} av {rows.length} oppgaver
         </span>
 
+        {/* ── View toggle ────────────────────────────────────────────── */}
+        <div className="flex items-center rounded-md border border-border overflow-hidden">
+          <button
+            onClick={() => setViewMode("cards")}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-2 text-xs transition-colors",
+              viewMode === "cards"
+                ? "bg-primary/15 text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
+            )}
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+            Kort
+          </button>
+          <div className="w-px h-full bg-border" />
+          <button
+            onClick={() => setViewMode("table")}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-2 text-xs transition-colors",
+              viewMode === "table"
+                ? "bg-primary/15 text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
+            )}
+          >
+            <Table2 className="h-3.5 w-3.5" />
+            Tabell
+          </button>
+        </div>
+
         {/* ── Add New button ─────────────────────────────────────────── */}
         <button
           onClick={() => setCreating(true)}
@@ -477,66 +784,75 @@ export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] 
         </button>
       </div>
 
-      {/* Cards grid */}
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-        {visible.map((p) => {
-          const cfg = statusConfig[p.mappedStatus];
-          return (
-            <Card key={p.id}
-              className={cn(
-                "border-border flex flex-col hover:border-primary/30 transition-colors relative",
-                cfg.cardBg
-              )}
-            >
-              <button onClick={() => setEditing(p)}
-                className="absolute top-3 right-3 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
-                title="Rediger">
-                <Pencil className="h-3.5 w-3.5" />
-              </button>
-
-              <CardHeader className="pb-2 pr-9">
-                <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-sm font-semibold text-foreground leading-snug">
-                    {p.oppgave ?? "—"}
-                  </CardTitle>
-                  <Badge variant="outline" className={cn("shrink-0 text-[10px] border", cfg.badge)}>
-                    {cfg.label}
-                  </Badge>
-                </div>
-                {p.kategori && (
-                  <CardDescription className="text-xs mt-1">{p.kategori}</CardDescription>
-                )}
-              </CardHeader>
-
-              <CardContent className="flex-1 flex flex-col justify-between gap-4">
-                {p.fase && (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Tag className="h-3.5 w-3.5 shrink-0" />
-                    <span>{p.fase}</span>
-                  </div>
-                )}
-                {p.mappedStatus === "idé" && (
-                  <button onClick={() => handleStartProject(p)} disabled={startingIds.has(p.id)}
-                    className="w-full rounded-md border border-purple-500/40 bg-purple-500/10 px-3 py-2 text-xs font-semibold text-purple-300 hover:bg-purple-500/20 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
-                    {startingIds.has(p.id) ? "Starter The Night Shift…" : "🚀 START PROSJEKT"}
+      {/* Cards / Table view */}
+      {viewMode === "cards" ? (
+        <>
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            {visible.map((p) => {
+              const cfg = statusConfig[p.mappedStatus];
+              return (
+                <Card key={p.id}
+                  className={cn(
+                    "border-border flex flex-col hover:border-primary/30 transition-colors relative",
+                    cfg.cardBg
+                  )}
+                >
+                  <button onClick={() => setEditing(p)}
+                    className="absolute top-3 right-3 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
+                    title="Rediger">
+                    <Pencil className="h-3.5 w-3.5" />
                   </button>
-                )}
-                {p.mappedStatus === "aktiv" && (
-                  <button onClick={() => console.log("ASK PIA:", p.oppgave, p.id)}
-                    className="w-full rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20 transition-colors">
-                    🧠 ASK PIA
-                  </button>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
 
-      {visible.length === 0 && (
-        <p className="text-center text-sm text-muted-foreground py-12">
-          Ingen oppgaver matcher valgt filter.
-        </p>
+                  <CardHeader className="pb-2 pr-9">
+                    <div className="flex items-start justify-between gap-2">
+                      <CardTitle className="text-sm font-semibold text-foreground leading-snug">
+                        {p.oppgave ?? "—"}
+                      </CardTitle>
+                      <Badge variant="outline" className={cn("shrink-0 text-[10px] border", cfg.badge)}>
+                        {cfg.label}
+                      </Badge>
+                    </div>
+                    {p.kategori && (
+                      <CardDescription className="text-xs mt-1">{p.kategori}</CardDescription>
+                    )}
+                  </CardHeader>
+
+                  <CardContent className="flex-1 flex flex-col justify-between gap-4">
+                    {p.fase && (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Tag className="h-3.5 w-3.5 shrink-0" />
+                        <span>{p.fase}</span>
+                      </div>
+                    )}
+                    {p.mappedStatus === "idé" && (
+                      <button onClick={() => handleStartProject(p)} disabled={startingIds.has(p.id)}
+                        className="w-full rounded-md border border-purple-500/40 bg-purple-500/10 px-3 py-2 text-xs font-semibold text-purple-300 hover:bg-purple-500/20 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
+                        {startingIds.has(p.id) ? "Starter The Night Shift…" : "🚀 START PROSJEKT"}
+                      </button>
+                    )}
+                    {p.mappedStatus === "aktiv" && (
+                      <button onClick={() => console.log("ASK PIA:", p.oppgave, p.id)}
+                        className="w-full rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20 transition-colors">
+                        🧠 ASK PIA
+                      </button>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+          {visible.length === 0 && (
+            <p className="text-center text-sm text-muted-foreground py-12">
+              Ingen oppgaver matcher valgt filter.
+            </p>
+          )}
+        </>
+      ) : (
+        <TableView
+          visible={visible}
+          onSaved={handleSaved}
+          onEdit={(p) => setEditing(p)}
+        />
       )}
 
       {/* Edit modal */}
