@@ -24,6 +24,13 @@ async function getActiveProjectCount(): Promise<number> {
   return Number(res.rows[0]?.count ?? 0);
 }
 
+async function getTotalProjectCount(): Promise<number> {
+  const res = await query<{ count: string }>(
+    "SELECT COUNT(*) AS count FROM masterplan"
+  );
+  return Number(res.rows[0]?.count ?? 0);
+}
+
 async function getAiLogCount(): Promise<number> {
   const res = await query<{ count: string }>(
     "SELECT COUNT(*) AS count FROM ai_logger"
@@ -31,22 +38,34 @@ async function getAiLogCount(): Promise<number> {
   return Number(res.rows[0]?.count ?? 0);
 }
 
+async function getAiCostNok(): Promise<number> {
+  const USD_TO_NOK = 10.5;
+  const res = await query<{ total_usd: string }>(
+    "SELECT COALESCE(SUM(api_kostnad_usd), 0) AS total_usd FROM ai_logger"
+  );
+  return Number(res.rows[0]?.total_usd ?? 0) * USD_TO_NOK;
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function Home() {
   let totalInvestert = 0;
   let totalAvkastningPct: number | null = null;
+  let totalAvkastningNok: number | null = null;
   let dbError: string | null = null;
 
-  const [activeProjects, aiLogCount] = await Promise.all([
+  const [activeProjects, totalProjects, aiLogCount, aiCostNok] = await Promise.all([
     getActiveProjectCount().catch(() => 0),
+    getTotalProjectCount().catch(() => 0),
     getAiLogCount().catch(() => 0),
+    getAiCostNok().catch(() => 0),
   ]);
 
   try {
     const stats = await getPortfolioStats();
     totalInvestert     = stats.totalInvestert;
     totalAvkastningPct = stats.totalAvkastningPct;
+    totalAvkastningNok = stats.totalAvkastningNok;
   } catch (err) {
     dbError = err instanceof Error ? err.message : "Ukjent databasefeil";
   }
@@ -54,6 +73,15 @@ export default async function Home() {
   const avkStr = totalAvkastningPct == null
     ? "—"
     : `${totalAvkastningPct > 0 ? "+" : ""}${totalAvkastningPct.toLocaleString("nb-NO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`;
+
+  const avkNokStr = totalAvkastningNok == null
+    ? null
+    : `${totalAvkastningNok > 0 ? "+" : ""}${totalAvkastningNok.toLocaleString("nb-NO", { maximumFractionDigits: 0 })} kr`;
+
+  const aiCostStr = aiCostNok.toLocaleString("nb-NO", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }) + " kr";
 
   const timeOfDay = (() => {
     const h = new Date().getHours();
@@ -149,22 +177,22 @@ export default async function Home() {
                   : undefined
               }
               sub={
-                totalAvkastningPct == null
+                avkNokStr == null
                   ? <span className="text-xs text-muted-foreground">Mangler siste_kurs</span>
-                  : <span className="text-xs text-muted-foreground">Fra portefølje</span>
+                  : <span className={cn("text-xs tabular-nums", totalAvkastningNok! > 0 ? "text-emerald-400" : totalAvkastningNok! < 0 ? "text-red-400" : "text-muted-foreground")}>{avkNokStr}</span>
               }
             />
             <StatCard
               icon={<FolderKanban className="h-4 w-4" />}
               label="Aktive Prosjekter"
-              value={String(activeProjects)}
+              value={`${activeProjects} / ${totalProjects}`}
               sub={<span className="text-xs text-muted-foreground">Status «I gang»</span>}
             />
             <StatCard
               icon={<BrainCircuit className="h-4 w-4" />}
               label="AI-analyser Totalt"
               value={aiLogCount.toLocaleString("nb-NO")}
-              sub={<span className="text-xs text-muted-foreground">Kall fra Speideren</span>}
+              sub={<span className="text-xs text-muted-foreground">{aiCostStr}</span>}
             />
           </div>
 
@@ -182,13 +210,22 @@ function JarvisOrb() {
       className="relative flex items-center justify-center select-none"
       style={{ width: 200, height: 200 }}
     >
-      {/* Ambient outer glow */}
+      {/* Ambient outer glow — primary */}
       <div
         className="absolute inset-0 rounded-full"
         style={{
           background: "radial-gradient(circle, var(--primary) 0%, transparent 65%)",
           opacity: 0.12,
           filter: "blur(30px)",
+        }}
+      />
+      {/* Ambient secondary glow — deep navy */}
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          background: "radial-gradient(circle at 60% 65%, #1e3a8a 0%, transparent 60%)",
+          opacity: 0.22,
+          filter: "blur(28px)",
         }}
       />
 
@@ -220,38 +257,38 @@ function JarvisOrb() {
           </filter>
         </defs>
 
-        {/* Ring 1 — outermost dotted + 4 tick marks, slow CW */}
+        {/* Ring 1 — outermost dotted + 4 tick marks, slow CW (deep navy) */}
         <g>
           <animateTransform attributeName="transform" type="rotate"
             from="0 100 100" to="360 100 100" dur="32s" repeatCount="indefinite" />
           <circle cx="100" cy="100" r="90"
-            style={{ stroke: "var(--primary)" }} strokeWidth="0.75" strokeDasharray="2 10" opacity="0.2" />
-          <line x1="100" y1="4"   x2="100" y2="17"  style={{ stroke: "var(--primary)" }} strokeWidth="1.5" opacity="0.55" />
-          <line x1="100" y1="183" x2="100" y2="196" style={{ stroke: "var(--primary)" }} strokeWidth="1.5" opacity="0.55" />
-          <line x1="4"   y1="100" x2="17"  y2="100" style={{ stroke: "var(--primary)" }} strokeWidth="1.5" opacity="0.55" />
-          <line x1="183" y1="100" x2="196" y2="100" style={{ stroke: "var(--primary)" }} strokeWidth="1.5" opacity="0.55" />
+            stroke="#172554" strokeWidth="0.75" strokeDasharray="2 10" opacity="0.55" />
+          <line x1="100" y1="4"   x2="100" y2="17"  stroke="#172554" strokeWidth="1.5" opacity="0.7" />
+          <line x1="100" y1="183" x2="100" y2="196" stroke="#172554" strokeWidth="1.5" opacity="0.7" />
+          <line x1="4"   y1="100" x2="17"  y2="100" stroke="#172554" strokeWidth="1.5" opacity="0.7" />
+          <line x1="183" y1="100" x2="196" y2="100" stroke="#172554" strokeWidth="1.5" opacity="0.7" />
         </g>
 
-        {/* Ring 2 — 4 arc segments, CCW */}
+        {/* Ring 2 — 4 arc segments, CCW (blue-900) */}
         <g>
           <animateTransform attributeName="transform" type="rotate"
             from="0 100 100" to="-360 100 100" dur="18s" repeatCount="indefinite" />
           {/* circ ≈ 465; dasharray 84+32=116, ×4=464 fills the circle evenly */}
           <circle cx="100" cy="100" r="74"
-            style={{ stroke: "var(--primary)" }} strokeWidth="1.5" strokeDasharray="84 32" opacity="0.5" filter="url(#softGlow)" />
+            stroke="#1e3a8a" strokeWidth="1.5" strokeDasharray="84 32" opacity="0.65" filter="url(#softGlow)" />
         </g>
 
-        {/* Ring 3 — small dashes, CW medium */}
+        {/* Ring 3 — small dashes, CW medium (blue-700) */}
         <g>
           <animateTransform attributeName="transform" type="rotate"
             from="0 100 100" to="360 100 100" dur="11s" repeatCount="indefinite" />
           <circle cx="100" cy="100" r="59"
-            style={{ stroke: "var(--primary)" }} strokeWidth="0.75" strokeDasharray="6 5" opacity="0.28" />
+            stroke="#1d4ed8" strokeWidth="0.75" strokeDasharray="6 5" opacity="0.4" />
         </g>
 
-        {/* Ring 4 — solid inner ring, static */}
+        {/* Ring 4 — solid inner ring, static (blue-600) */}
         <circle cx="100" cy="100" r="47"
-          style={{ stroke: "var(--primary)" }} strokeWidth="1" opacity="0.5" filter="url(#softGlow)" />
+          stroke="#2563eb" strokeWidth="1" opacity="0.55" filter="url(#softGlow)" />
 
         {/* Crosshair */}
         <line x1="64"  y1="100" x2="136" y2="100" style={{ stroke: "var(--primary)" }} strokeWidth="0.5" opacity="0.18" />
@@ -261,12 +298,13 @@ function JarvisOrb() {
         <circle cx="100" cy="100" r="47" fill="url(#orbFill)" filter="url(#coreBloom)" />
       </svg>
 
-      {/* Lightning bolt icon */}
-      <div
-        className="relative z-10 flex items-center justify-center"
-        style={{ filter: "drop-shadow(0 0 6px var(--primary)) drop-shadow(0 0 16px var(--primary))" }}
-      >
-        <Zap className="text-primary" style={{ width: 26, height: 26 }} strokeWidth={1.5} />
+      {/* Lightning bolt icon — dark/black, clearly visible against the glowing core */}
+      <div className="relative z-10 flex items-center justify-center">
+        <Zap
+          style={{ width: 28, height: 28, color: "#0f172a" }}
+          strokeWidth={2.5}
+          fill="#0f172a"
+        />
       </div>
     </div>
   );

@@ -1,21 +1,22 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 
-const COST_PER_MILLION_TOKENS = 1.25; // NOK
+const USD_TO_NOK = 10.5;
 
 export async function GET() {
   try {
-    const res = await query<{ total_tokens: string }>(
-      "SELECT COALESCE(SUM(tokens_brukt), 0) AS total_tokens FROM ai_logger"
+    const res = await query<{ total_usd: string }>(
+      "SELECT COALESCE(SUM(api_kostnad_usd), 0) AS total_usd FROM ai_logger"
     );
-    const tokens = Number(res.rows[0]?.total_tokens ?? 0);
-    const costNok = (tokens / 1_000_000) * COST_PER_MILLION_TOKENS;
-    const formatted = costNok.toLocaleString("nb-NO", {
-      minimumFractionDigits: 4,
-      maximumFractionDigits: 4,
-    }) + " kr";
-    return NextResponse.json({ tokens, costNok: formatted });
+    const usd = Number(res.rows[0]?.total_usd ?? 0);
+    const nok = usd * USD_TO_NOK;
+    const formatted =
+      nok.toLocaleString("nb-NO", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }) + " kr";
+    return NextResponse.json({ costNok: formatted });
   } catch {
-    return NextResponse.json({ tokens: 0, costNok: "0,0000 kr" });
+    return NextResponse.json({ costNok: "0,00 kr" });
   }
 }

@@ -177,21 +177,26 @@ export async function getWatchlistItems(): Promise<WatchlistItem[]> {
       ai_handling: string | null;
       ai_detaljer: string | null;
     }>(
-      `SELECT DISTINCT ON (p.ticker)
+      `SELECT
          p.ticker,
          p.selskapsnavn,
          p.siste_kurs,
          p.antall,
-         a.handling AS ai_handling,
-         a.detaljer AS ai_detaljer
+         latest.handling AS ai_handling,
+         latest.detaljer AS ai_detaljer
        FROM portfolio p
-       LEFT JOIN ai_logger a ON UPPER(a.ticker) = UPPER(p.ticker)
+       LEFT JOIN (
+         SELECT DISTINCT ON (ticker) ticker, handling, detaljer
+         FROM ai_logger
+         WHERE ticker IS NOT NULL
+         ORDER BY ticker, id DESC
+       ) latest ON UPPER(latest.ticker) = UPPER(p.ticker)
        WHERE (p.antall IS NULL OR p.antall = 0)
          AND (
-               a.handling ILIKE '%buy%'
-            OR a.handling ILIKE '%kjøp%'
+               latest.handling ILIKE '%buy%'
+            OR latest.handling ILIKE '%kjøp%'
          )
-       ORDER BY p.ticker, a.id DESC NULLS LAST`
+       ORDER BY p.ticker`
     );
 
     const rows = result.rows.map((r) => ({

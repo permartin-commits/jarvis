@@ -67,18 +67,15 @@ function HoldingCard({ h }: { h: EnrichedHolding }) {
         }}
       >
         {/* Ticker / Selskapsnavn */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <div className="flex h-7 w-12 items-center justify-center rounded bg-primary/10 text-xs font-bold text-primary shrink-0">
             {h.ticker.slice(0, 5)}
           </div>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground leading-tight truncate">
-              {h.ticker}
+          {h.selskapsnavn && (
+            <p className="text-sm font-bold text-foreground leading-tight truncate">
+              {h.selskapsnavn}
             </p>
-            {h.selskapsnavn && (
-              <p className="text-[10px] text-muted-foreground truncate">{h.selskapsnavn}</p>
-            )}
-          </div>
+          )}
         </div>
 
         {/* Investert */}
@@ -113,7 +110,7 @@ function HoldingCard({ h }: { h: EnrichedHolding }) {
         {/* Target */}
         <div>
           <p className="text-xs text-muted-foreground">Target</p>
-          <p className="text-sm tabular-nums text-foreground">
+          <p className="text-sm font-semibold tabular-nums text-foreground">
             {h.target == null ? "—" : `${fmt(h.target, 2)} kr`}
           </p>
         </div>
@@ -121,7 +118,7 @@ function HoldingCard({ h }: { h: EnrichedHolding }) {
         {/* Stop Loss */}
         <div>
           <p className="text-xs text-muted-foreground">Stop Loss</p>
-          <p className="text-sm tabular-nums text-foreground">
+          <p className="text-sm font-semibold tabular-nums text-foreground">
             {h.stop_loss == null ? "—" : `${fmt(h.stop_loss, 2)} kr`}
           </p>
         </div>
@@ -158,43 +155,83 @@ function HoldingCard({ h }: { h: EnrichedHolding }) {
         </div>
       </button>
 
-      {/* Expanded: AI-analyse */}
+      {/* Expanded panel */}
       {expanded && (
-        <div className="px-4 pb-4 pt-1 bg-secondary/10">
-          {h.aiDetaljer ? (
-            <div className="rounded-lg border border-border bg-background/50 p-4 space-y-2">
-              <div className="flex items-center gap-2">
-                <BrainCircuit className="h-3.5 w-3.5 text-primary/70 shrink-0" />
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-primary/70">
-                  Siste AI-analyse
-                </p>
-              </div>
-              <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
-                {h.aiDetaljer}
-              </p>
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground italic py-2">
-              Ingen AI-analyse registrert for {h.ticker}.
-            </p>
-          )}
+        <div className="bg-secondary/10 space-y-3 pb-4">
 
-          <div className="mt-3 grid grid-cols-3 gap-3 text-xs">
+          {/* ── Stats + buttons aligned to header columns ── */}
+          <div
+            className="px-4 pt-3 grid gap-x-3"
+            style={{
+              gridTemplateColumns:
+                "minmax(80px,1fr) minmax(80px,1fr) repeat(4,minmax(60px,1fr)) minmax(100px,1fr) 24px",
+              alignItems: "start",
+            }}
+          >
+            <div /> {/* col 1: ticker — empty */}
+            {/* col 2: under Investert */}
             <div>
-              <p className="text-muted-foreground">Antall aksjer</p>
-              <p className="font-semibold text-foreground tabular-nums">{fmt(h.antall)}</p>
+              <p className="text-xs text-muted-foreground">Antall aksjer</p>
+              <p className="text-sm font-semibold tabular-nums text-foreground">{fmt(h.antall)}</p>
             </div>
+            <div /> {/* col 3: under Avkastning — empty */}
+            {/* col 4: under Target */}
             <div>
-              <p className="text-muted-foreground">Kjøpskurs</p>
-              <p className="font-semibold text-foreground tabular-nums">{fmt(h.kjopskurs, 2)} kr</p>
+              <p className="text-xs text-muted-foreground">Kjøpskurs</p>
+              <p className="text-sm font-semibold tabular-nums text-foreground">{fmt(h.kjopskurs, 2)} kr</p>
             </div>
+            {/* col 5: under Stop Loss */}
             <div>
-              <p className="text-muted-foreground">Siste kurs</p>
-              <p className="font-semibold text-foreground tabular-nums">
+              <p className="text-xs text-muted-foreground">Siste kurs</p>
+              <p className="text-sm font-semibold tabular-nums text-foreground">
                 {h.siste_kurs != null ? `${fmt(h.siste_kurs, 2)} kr` : "—"}
               </p>
             </div>
+            {/* cols 6–7: under Anbefaling + Andel — badge-style buttons */}
+            <div className="flex items-center gap-1.5 pt-3" style={{ gridColumn: "span 2" }}>
+              <button
+                type="button"
+                className="inline-flex items-center rounded-sm border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-400 hover:bg-emerald-500/25 transition-colors"
+              >
+                Kjøp
+              </button>
+              <button
+                type="button"
+                className="inline-flex items-center rounded-sm border border-red-500/30 bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-400 hover:bg-red-500/25 transition-colors"
+              >
+                Selg
+              </button>
+            </div>
+            <div /> {/* col 8: chevron space — empty */}
           </div>
+
+          {/* ── Siste AI-analyse ── */}
+          <div className="mx-4 rounded-lg border border-border/60 bg-white/[0.06] p-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <BrainCircuit className="h-3.5 w-3.5 text-primary/70 shrink-0" />
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-primary/70">
+                Siste AI-analyse
+              </p>
+            </div>
+            {h.aiDetaljer ? (
+              <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
+                {h.aiDetaljer}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground italic">
+                Ingen AI-analyse registrert for {h.ticker}.
+              </p>
+            )}
+          </div>
+
+          {/* ── Beskrivelse ── */}
+          <div className="mx-4 rounded-lg border border-border/60 bg-white/[0.06] px-4 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-primary/70 mb-1.5">
+              Beskrivelse
+            </p>
+            <p className="text-xs text-muted-foreground/50 italic">—</p>
+          </div>
+
         </div>
       )}
     </div>
@@ -233,7 +270,7 @@ function WatchlistRow({ item }: { item: WatchlistItem }) {
         {/* Siste kurs */}
         {item.siste_kurs != null && (
           <span className="text-xs tabular-nums text-muted-foreground shrink-0">
-            {fmt(item.siste_kurs, 2)} kr
+            Siste kurs: {fmt(item.siste_kurs, 2)} kr
           </span>
         )}
 

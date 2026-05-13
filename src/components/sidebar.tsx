@@ -11,6 +11,8 @@ import {
   X,
   LayoutDashboard,
   CircleDollarSign,
+  Dumbbell,
+  BrainCircuit,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -19,6 +21,8 @@ const navItems = [
   { label: "Oversikt",   href: "/",          icon: LayoutDashboard },
   { label: "Portefølje", href: "/portefolje", icon: TrendingUp },
   { label: "Prosjekter", href: "/prosjekter", icon: FolderKanban },
+  { label: "Fitness",    href: "/fitness",    icon: Dumbbell },
+  { label: "Agent",      href: "/agent",      icon: BrainCircuit },
 ];
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
@@ -104,7 +108,7 @@ function ApiCostBadge() {
       </div>
       <div>
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-          API Kostnad
+          API Kostnad (USD)
         </p>
         <p className="text-xs font-semibold text-foreground tabular-nums">
           {costNok}

@@ -44,13 +44,6 @@ export default async function PortefoljePage() {
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
       <main className="flex-1 overflow-y-auto bg-background pt-14 md:pt-0">
-        <div className="sticky top-14 md:top-0 z-10 border-b border-border bg-background/80 backdrop-blur-sm px-4 md:px-8 py-4">
-          <h1 className="text-lg font-semibold text-foreground">Portefølje</h1>
-          <p className="text-xs text-muted-foreground">
-            Aksjer og investeringer — live fra PostgreSQL
-          </p>
-        </div>
-
         <div className="px-4 md:px-8 py-6 space-y-6">
           {dbError && (
             <div className="flex items-start gap-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
