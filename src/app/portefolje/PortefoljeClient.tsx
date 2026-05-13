@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -10,8 +10,10 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { ChevronDown, BrainCircuit, Radar } from "lucide-react";
-import type { PortfolioRow, LatestAiLog, WatchlistItem } from "@/lib/portfolio";
+import { ChevronDown, BrainCircuit, Radar, RefreshCw } from "lucide-react";
+import type { PortfolioRow, LatestAiLog, WatchlistItem, PortfolioStats } from "@/lib/portfolio";
+
+const POLL_INTERVAL_MS = 30_000;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -368,17 +370,53 @@ function WatchlistSection({ items }: { items: WatchlistItem[] }) {
 
 // ── Main component ─────────────────────────────────────────────────────────────
 
-export function PortefoljeClient({
-  holdings,
-  aiLogs,
-  totalInvestert,
-  watchlist,
-}: {
+interface PortefoljeClientProps {
   holdings: PortfolioRow[];
   aiLogs: LatestAiLog[];
   totalInvestert: number;
   watchlist: WatchlistItem[];
-}) {
+  stats?: PortfolioStats;
+}
+
+export function PortefoljeClient({
+  holdings: initialHoldings,
+  aiLogs: initialAiLogs,
+  totalInvestert: initialTotalInvestert,
+  watchlist: initialWatchlist,
+}: PortefoljeClientProps) {
+  const [holdings, setHoldings]             = useState(initialHoldings);
+  const [aiLogs, setAiLogs]                 = useState(initialAiLogs);
+  const [totalInvestert, setTotalInvestert] = useState(initialTotalInvestert);
+  const [watchlist, setWatchlist]           = useState(initialWatchlist);
+  const [lastUpdated, setLastUpdated]       = useState<Date | null>(null);
+  const [refreshing, setRefreshing]         = useState(false);
+
+  const fetchLatest = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const res = await fetch("/api/portefolje", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json() as {
+        holdings: PortfolioRow[];
+        aiLogs: LatestAiLog[];
+        watchlist: WatchlistItem[];
+        stats: PortfolioStats;
+      };
+      setHoldings(data.holdings);
+      setAiLogs(data.aiLogs);
+      setWatchlist(data.watchlist);
+      setTotalInvestert(data.stats.totalInvestert);
+      setLastUpdated(new Date());
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(fetchLatest, POLL_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [fetchLatest]);
+
   const aiMap = new Map(aiLogs.map((l) => [l.ticker.toUpperCase(), l]));
 
   const enriched: EnrichedHolding[] = holdings.map((h) => {
@@ -401,10 +439,30 @@ export function PortefoljeClient({
       ) : (
         <Card className="bg-card border-border overflow-hidden">
           <CardHeader className="pb-3 border-b border-border">
-            <CardTitle className="text-sm font-semibold">Alle posisjoner</CardTitle>
-            <CardDescription className="text-xs">
-              Klikk på en rad for å se siste AI-analyse · {enriched.length} posisjoner
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-sm font-semibold">Alle posisjoner</CardTitle>
+                <CardDescription className="text-xs">
+                  Klikk på en rad for å se siste AI-analyse · {enriched.length} posisjoner
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                {lastUpdated && (
+                  <span className="text-[10px] text-muted-foreground/60 tabular-nums">
+                    Oppdatert {lastUpdated.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={fetchLatest}
+                  disabled={refreshing}
+                  title="Oppdater nå"
+                  className="flex items-center justify-center h-6 w-6 rounded hover:bg-secondary/50 transition-colors disabled:opacity-40"
+                >
+                  <RefreshCw className={cn("h-3.5 w-3.5 text-muted-foreground", refreshing && "animate-spin")} />
+                </button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             {/* Column headers */}

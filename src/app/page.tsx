@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Zap,
 } from "lucide-react";
+import { PiaChatBox } from "@/components/PiaChatBox";
 
 // ── Data fetchers ─────────────────────────────────────────────────────────────
 
@@ -117,23 +118,8 @@ export default async function Home() {
               {timeOfDay} Per Martin, hva vil du gjøre i dag?
             </p>
 
-            {/* Input */}
-            <div className="w-full max-w-xl">
-              <div className="relative">
-                <input
-                  type="text"
-                  disabled
-                  placeholder="Snakk med PIA…"
-                  className="w-full rounded-full border border-primary/25 bg-primary/5 px-6 py-3.5 text-sm text-muted-foreground placeholder:text-muted-foreground/40 cursor-not-allowed outline-none ring-0 shadow-inner"
-                />
-                <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                  <BrainCircuit className="h-4 w-4 text-primary/30" />
-                </div>
-              </div>
-              <p className="mt-2 text-center text-[10px] text-muted-foreground/50">
-                Chat-funksjon under utvikling
-              </p>
-            </div>
+            {/* Chat */}
+            <PiaChatBox />
           </div>
 
           {/* DB error banner */}
