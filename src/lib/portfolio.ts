@@ -29,6 +29,7 @@ export type WatchlistItem = {
   ticker: string;
   selskapsnavn: string | null;
   siste_kurs: number | null;
+  antall: number | null;
   aiHandling: string | null;
   aiDetaljer: string | null;
 };
@@ -172,6 +173,7 @@ export async function getWatchlistItems(): Promise<WatchlistItem[]> {
       ticker: string;
       selskapsnavn: string | null;
       siste_kurs: string | null;
+      antall: string | null;
       ai_handling: string | null;
       ai_detaljer: string | null;
     }>(
@@ -179,25 +181,41 @@ export async function getWatchlistItems(): Promise<WatchlistItem[]> {
          p.ticker,
          p.selskapsnavn,
          p.siste_kurs,
+         p.antall,
          a.handling AS ai_handling,
          a.detaljer AS ai_detaljer
        FROM portfolio p
        LEFT JOIN ai_logger a ON UPPER(a.ticker) = UPPER(p.ticker)
        WHERE (p.antall IS NULL OR p.antall = 0)
          AND (
-               UPPER(COALESCE(a.handling, '')) LIKE '%BUY%'
-            OR UPPER(COALESCE(a.handling, '')) LIKE '%KJ_P%'
+               a.handling ILIKE '%buy%'
+            OR a.handling ILIKE '%kjøp%'
          )
        ORDER BY p.ticker, a.id DESC NULLS LAST`
     );
 
-    return result.rows.map((r) => ({
-      ticker:      r.ticker,
+    const rows = result.rows.map((r) => ({
+      ticker:       r.ticker,
       selskapsnavn: r.selskapsnavn ?? null,
-      siste_kurs:  r.siste_kurs != null ? Number(r.siste_kurs) : null,
-      aiHandling:  r.ai_handling ?? null,
-      aiDetaljer:  r.ai_detaljer ?? null,
+      siste_kurs:   r.siste_kurs != null ? Number(r.siste_kurs) : null,
+      antall:       r.antall != null ? Number(r.antall) : null,
+      aiHandling:   r.ai_handling ?? null,
+      aiDetaljer:   r.ai_detaljer ?? null,
     }));
+
+    // Defence-in-depth: strict TypeScript filter.
+    // Only include rows where antall is 0/null/undefined AND
+    // siste_anbefaling (aiHandling) contains "kjøp" or "buy" — case-insensitive,
+    // checked exclusively on aiHandling, never on aiDetaljer or other fields.
+    return rows.filter((item) => {
+      const antallOk =
+        item.antall === 0 || item.antall === null || item.antall === undefined;
+
+      const rec = (item.aiHandling ?? "").toLowerCase();
+      const anbefalingOk = rec.includes("kjøp") || rec.includes("buy");
+
+      return antallOk && anbefalingOk;
+    });
   } catch {
     return [];
   }

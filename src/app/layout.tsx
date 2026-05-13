@@ -15,8 +15,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Jarvis Dashboard",
-  description: "Privat Jarvis-dashboard",
+  title: "PIA",
+  description: "Privat PIA-dashboard",
 };
 
 export default function RootLayout({

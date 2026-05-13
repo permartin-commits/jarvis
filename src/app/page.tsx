@@ -55,13 +55,13 @@ export default async function Home() {
     ? "—"
     : `${totalAvkastningPct > 0 ? "+" : ""}${totalAvkastningPct.toLocaleString("nb-NO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`;
 
-  const timeOfDay = () => {
+  const timeOfDay = (() => {
     const h = new Date().getHours();
     if (h < 6)  return "God natt";
     if (h < 12) return "God morgen";
     if (h < 18) return "God dag";
     return "God kveld";
-  };
+  })();
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -77,7 +77,7 @@ export default async function Home() {
             {/* JARVIS label */}
             <div className="text-center space-y-1.5">
               <h2 className="text-2xl font-bold tracking-[0.45em] uppercase bg-gradient-to-r from-primary via-primary/60 to-primary bg-clip-text text-transparent">
-                JARVIS
+                PIA
               </h2>
               <p className="text-[10px] tracking-[0.35em] uppercase text-muted-foreground/60">
                 Master OS
@@ -86,7 +86,7 @@ export default async function Home() {
 
             {/* Greeting */}
             <p className="text-base font-medium text-foreground/75 text-center">
-              {timeOfDay()} Per Martin, hva vil du gjøre i dag?
+              {timeOfDay} Per Martin, hva vil du gjøre i dag?
             </p>
 
             {/* Input */}
@@ -95,7 +95,7 @@ export default async function Home() {
                 <input
                   type="text"
                   disabled
-                  placeholder="Snakk med Jarvis…"
+                  placeholder="Snakk med PIA…"
                   className="w-full rounded-full border border-primary/25 bg-primary/5 px-6 py-3.5 text-sm text-muted-foreground placeholder:text-muted-foreground/40 cursor-not-allowed outline-none ring-0 shadow-inner"
                 />
                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
