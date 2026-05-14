@@ -29,7 +29,7 @@ interface Message {
 // Augment Window for webkit-prefixed recognition
 declare global {
   interface Window {
-    webkitSpeechRecognition: typeof SpeechRecognition;
+    webkitSpeechRecognition: new () => SpeechRecognition;
   }
 }
 
