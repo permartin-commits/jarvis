@@ -12,9 +12,9 @@ import {
   FolderKanban,
   BrainCircuit,
   AlertCircle,
-  Zap,
 } from "lucide-react";
-import { PiaChatBox } from "@/components/PiaChatBox";
+import { PiaCoreSection } from "@/components/PiaCoreSection";
+import { LiveCostSub } from "@/components/LiveCostSub";
 
 // ── Data fetchers ─────────────────────────────────────────────────────────────
 
@@ -41,10 +41,15 @@ async function getAiLogCount(): Promise<number> {
 
 async function getAiCostNok(): Promise<number> {
   const USD_TO_NOK = 10.5;
-  const res = await query<{ total_usd: string }>(
-    "SELECT COALESCE(SUM(api_kostnad_usd), 0) AS total_usd FROM ai_logger"
-  );
-  return Number(res.rows[0]?.total_usd ?? 0) * USD_TO_NOK;
+  const [ai, pia] = await Promise.all([
+    query<{ total_usd: string }>(
+      "SELECT COALESCE(SUM(api_kostnad_usd), 0) AS total_usd FROM ai_logger"
+    ).then((r) => Number(r.rows[0]?.total_usd ?? 0)).catch(() => 0),
+    query<{ total_usd: string }>(
+      `SELECT COALESCE(SUM(kostnad_usd), 0) AS total_usd FROM "Pia_usage_log"`
+    ).then((r) => Number(r.rows[0]?.total_usd ?? 0)).catch(() => 0),
+  ]);
+  return (ai + pia) * USD_TO_NOK;
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
@@ -99,27 +104,9 @@ export default async function Home() {
       <main className="flex-1 overflow-y-auto bg-background pt-14 md:pt-0">
         <div className="px-4 md:px-8 py-8 md:py-10 space-y-8">
 
-          {/* ── Jarvis Core ────────────────────────────────────────────── */}
+          {/* ── PIA Core (orb + speech + chat) ─────────────────────── */}
           <div className="flex flex-col items-center gap-5 pt-10 md:pt-14">
-            <JarvisOrb />
-
-            {/* JARVIS label */}
-            <div className="text-center space-y-1.5">
-              <h2 className="text-2xl font-bold tracking-[0.45em] uppercase bg-gradient-to-r from-primary via-primary/60 to-primary bg-clip-text text-transparent">
-                PIA
-              </h2>
-              <p className="text-[10px] tracking-[0.35em] uppercase text-muted-foreground/60">
-                Master OS
-              </p>
-            </div>
-
-            {/* Greeting */}
-            <p className="text-base font-medium text-foreground/75 text-center">
-              {timeOfDay} Per Martin, hva vil du gjøre i dag?
-            </p>
-
-            {/* Chat */}
-            <PiaChatBox />
+            <PiaCoreSection greeting={timeOfDay} />
           </div>
 
           {/* DB error banner */}
@@ -178,120 +165,12 @@ export default async function Home() {
               icon={<BrainCircuit className="h-4 w-4" />}
               label="AI-analyser Totalt"
               value={aiLogCount.toLocaleString("nb-NO")}
-              sub={<span className="text-xs text-muted-foreground">{aiCostStr}</span>}
+              sub={<LiveCostSub initial={aiCostStr} />}
             />
           </div>
 
         </div>
       </main>
-    </div>
-  );
-}
-
-// ── JarvisOrb ─────────────────────────────────────────────────────────────────
-
-function JarvisOrb() {
-  return (
-    <div
-      className="relative flex items-center justify-center select-none"
-      style={{ width: 200, height: 200 }}
-    >
-      {/* Ambient outer glow — primary */}
-      <div
-        className="absolute inset-0 rounded-full"
-        style={{
-          background: "radial-gradient(circle, var(--primary) 0%, transparent 65%)",
-          opacity: 0.12,
-          filter: "blur(30px)",
-        }}
-      />
-      {/* Ambient secondary glow — deep navy */}
-      <div
-        className="absolute inset-0 rounded-full"
-        style={{
-          background: "radial-gradient(circle at 60% 65%, #1e3a8a 0%, transparent 60%)",
-          opacity: 0.22,
-          filter: "blur(28px)",
-        }}
-      />
-
-      <svg
-        width="200"
-        height="200"
-        viewBox="0 0 200 200"
-        fill="none"
-        className="absolute inset-0"
-      >
-        <defs>
-          <radialGradient id="orbFill" cx="38%" cy="32%" r="65%">
-            <stop offset="0%"   style={{ stopColor: "var(--primary)", stopOpacity: 0.55 }} />
-            <stop offset="100%" style={{ stopColor: "var(--primary)", stopOpacity: 0.04 }} />
-          </radialGradient>
-          <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
-            <feGaussianBlur stdDeviation="2" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-          <filter id="coreBloom" x="-60%" y="-60%" width="220%" height="220%">
-            <feGaussianBlur stdDeviation="7" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-
-        {/* Ring 1 — outermost dotted + 4 tick marks, slow CW (deep navy) */}
-        <g>
-          <animateTransform attributeName="transform" type="rotate"
-            from="0 100 100" to="360 100 100" dur="32s" repeatCount="indefinite" />
-          <circle cx="100" cy="100" r="90"
-            stroke="#172554" strokeWidth="0.75" strokeDasharray="2 10" opacity="0.55" />
-          <line x1="100" y1="4"   x2="100" y2="17"  stroke="#172554" strokeWidth="1.5" opacity="0.7" />
-          <line x1="100" y1="183" x2="100" y2="196" stroke="#172554" strokeWidth="1.5" opacity="0.7" />
-          <line x1="4"   y1="100" x2="17"  y2="100" stroke="#172554" strokeWidth="1.5" opacity="0.7" />
-          <line x1="183" y1="100" x2="196" y2="100" stroke="#172554" strokeWidth="1.5" opacity="0.7" />
-        </g>
-
-        {/* Ring 2 — 4 arc segments, CCW (blue-900) */}
-        <g>
-          <animateTransform attributeName="transform" type="rotate"
-            from="0 100 100" to="-360 100 100" dur="18s" repeatCount="indefinite" />
-          {/* circ ≈ 465; dasharray 84+32=116, ×4=464 fills the circle evenly */}
-          <circle cx="100" cy="100" r="74"
-            stroke="#1e3a8a" strokeWidth="1.5" strokeDasharray="84 32" opacity="0.65" filter="url(#softGlow)" />
-        </g>
-
-        {/* Ring 3 — small dashes, CW medium (blue-700) */}
-        <g>
-          <animateTransform attributeName="transform" type="rotate"
-            from="0 100 100" to="360 100 100" dur="11s" repeatCount="indefinite" />
-          <circle cx="100" cy="100" r="59"
-            stroke="#1d4ed8" strokeWidth="0.75" strokeDasharray="6 5" opacity="0.4" />
-        </g>
-
-        {/* Ring 4 — solid inner ring, static (blue-600) */}
-        <circle cx="100" cy="100" r="47"
-          stroke="#2563eb" strokeWidth="1" opacity="0.55" filter="url(#softGlow)" />
-
-        {/* Crosshair */}
-        <line x1="64"  y1="100" x2="136" y2="100" style={{ stroke: "var(--primary)" }} strokeWidth="0.5" opacity="0.18" />
-        <line x1="100" y1="64"  x2="100" y2="136" style={{ stroke: "var(--primary)" }} strokeWidth="0.5" opacity="0.18" />
-
-        {/* Core fill */}
-        <circle cx="100" cy="100" r="47" fill="url(#orbFill)" filter="url(#coreBloom)" />
-      </svg>
-
-      {/* Lightning bolt icon — dark/black, clearly visible against the glowing core */}
-      <div className="relative z-10 flex items-center justify-center">
-        <Zap
-          style={{ width: 28, height: 28, color: "#0f172a" }}
-          strokeWidth={2.5}
-          fill="#0f172a"
-        />
-      </div>
     </div>
   );
 }

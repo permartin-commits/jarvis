@@ -89,14 +89,21 @@ function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
   );
 }
 
+const COST_POLL_MS = 60_000;
+
 function ApiCostBadge() {
   const [costNok, setCostNok] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/api-cost")
-      .then((r) => r.json())
-      .then((d) => setCostNok(d.costNok ?? null))
-      .catch(() => {});
+    const load = () =>
+      fetch("/api/api-cost")
+        .then((r) => r.json())
+        .then((d) => setCostNok(d.costNok ?? null))
+        .catch(() => {});
+
+    load();
+    const id = setInterval(load, COST_POLL_MS);
+    return () => clearInterval(id);
   }, []);
 
   if (!costNok) return null;
@@ -108,7 +115,7 @@ function ApiCostBadge() {
       </div>
       <div>
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-          API Kostnad (USD)
+          API Kostnad
         </p>
         <p className="text-xs font-semibold text-foreground tabular-nums">
           {costNok}
