@@ -26,12 +26,38 @@ interface Message {
   text: string;
 }
 
-// Augment Window for webkit-prefixed recognition
-declare global {
-  interface Window {
-    webkitSpeechRecognition: new () => SpeechRecognition;
-  }
+// ── Speech Recognition — self-contained types (lib.dom not reliable in Next.js build) ──
+
+interface SR {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onstart:  (() => void) | null;
+  onresult: ((e: SRResultEvent) => void) | null;
+  onerror:  ((e: SRErrorEvent)  => void) | null;
+  onend:    (() => void) | null;
+  start(): void;
+  stop():  void;
+  abort(): void;
 }
+interface SRResult {
+  readonly isFinal: boolean;
+  readonly length: number;
+  [index: number]: { readonly transcript: string };
+}
+interface SRResultList {
+  readonly length: number;
+  readonly resultIndex?: number;
+  [index: number]: SRResult;
+}
+interface SRResultEvent {
+  readonly resultIndex: number;
+  readonly results: SRResultList;
+}
+interface SRErrorEvent {
+  readonly error: string;
+}
+type SRConstructor = new () => SR;
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -49,14 +75,14 @@ function stripMarkdown(text: string): string {
     // Headings — keep text, drop symbols
     .replace(/^#{1,6}\s+/gm, "")
     // Bold+italic, bold, italic (both * and _)
-    .replace(/\*{3}(.+?)\*{3}/gs, "$1")
-    .replace(/_{3}(.+?)_{3}/gs, "$1")
-    .replace(/\*{2}(.+?)\*{2}/gs, "$1")
-    .replace(/_{2}(.+?)_{2}/gs, "$1")
-    .replace(/\*(.+?)\*/gs, "$1")
-    .replace(/_(.+?)_/gs, "$1")
+    .replace(/\*{3}([\s\S]+?)\*{3}/g, "$1")
+    .replace(/_{3}([\s\S]+?)_{3}/g, "$1")
+    .replace(/\*{2}([\s\S]+?)\*{2}/g, "$1")
+    .replace(/_{2}([\s\S]+?)_{2}/g, "$1")
+    .replace(/\*([\s\S]+?)\*/g, "$1")
+    .replace(/_([\s\S]+?)_/g, "$1")
     // Strikethrough
-    .replace(/~~(.+?)~~/gs, "$1")
+    .replace(/~~([\s\S]+?)~~/g, "$1")
     // Inline code — keep text
     .replace(/`([^`]+)`/g, "$1")
     // Horizontal rules
@@ -320,7 +346,7 @@ export function PiaCoreSection({ greeting }: { greeting: string }) {
 
   const bottomRef      = useRef<HTMLDivElement>(null);
   const inputRef       = useRef<HTMLInputElement>(null);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<SR | null>(null);
 
   // ── Auto-scroll ───────────────────────────────────────────────────────────
 
@@ -393,10 +419,10 @@ export function PiaCoreSection({ greeting }: { greeting: string }) {
       return;
     }
 
-    const SR =
-      typeof window !== "undefined"
-        ? (window.SpeechRecognition ?? window.webkitSpeechRecognition ?? null)
-        : null;
+    const win = typeof window !== "undefined"
+      ? (window as Window & { SpeechRecognition?: SRConstructor; webkitSpeechRecognition?: SRConstructor })
+      : null;
+    const SR: SRConstructor | null = win?.SpeechRecognition ?? win?.webkitSpeechRecognition ?? null;
 
     if (!SR) {
       setMicUnsupported(true);
@@ -419,7 +445,7 @@ export function PiaCoreSection({ greeting }: { greeting: string }) {
       setError(null);
     };
 
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
+    recognition.onresult = (event: SRResultEvent) => {
       let interim = "";
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const t = event.results[i][0].transcript;
@@ -435,7 +461,7 @@ export function PiaCoreSection({ greeting }: { greeting: string }) {
       setInput(combined);
     };
 
-    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+    recognition.onerror = (event: SRErrorEvent) => {
       if (event.error === "not-allowed") {
         setError("Mikrofontillatelse avvist. Sjekk nettleserinnstillingene og last inn siden på nytt.");
       } else if (event.error !== "aborted" && event.error !== "no-speech") {
