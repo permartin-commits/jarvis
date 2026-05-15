@@ -61,7 +61,7 @@ type SRConstructor = new () => SR;
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const WEBHOOK_URL = "https://n8n.verlanse.no/webhook/pia-svar";
+const CHAT_API = "/api/pia-chat";
 
 // ── TTS helpers ───────────────────────────────────────────────────────────────
 
@@ -506,15 +506,15 @@ export function PiaCoreSection({
     setLoading(true);
 
     try {
-      const res = await fetch(WEBHOOK_URL, {
+      const res = await fetch(CHAT_API, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sporsmal: trimmed, sessionId: "per_martin_web" }),
       });
 
-      if (!res.ok) throw new Error(`Webhook svarte med status ${res.status}`);
+      const data = (await res.json()) as { svar?: string; error?: string };
 
-      const data = (await res.json()) as { svar?: string };
+      if (!res.ok) throw new Error(data.error ?? `Feil fra serveren (${res.status})`);
       const svar = data.svar?.trim();
 
       if (!svar) throw new Error("Fikk tomt svar fra PIA.");

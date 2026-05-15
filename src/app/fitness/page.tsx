@@ -2,7 +2,6 @@ import { Sidebar } from "@/components/sidebar";
 import { PiaCoreSection } from "@/components/PiaCoreSection";
 import { BeastmakerLogger } from "./BeastmakerLogger";
 import { StravaLog } from "./StravaLog";
-import { Separator } from "@/components/ui/separator";
 
 export default function FitnessPage() {
   return (
@@ -13,28 +12,33 @@ export default function FitnessPage() {
         <div className="flex h-full overflow-hidden">
 
           {/* ── Left: Training log ────────────────────────────────── */}
-          <div className="flex-1 overflow-y-auto px-4 md:px-6 py-6 space-y-10 border-r border-border">
+          <div className="flex-1 overflow-y-auto">
 
-            {/* Page title */}
-            <div>
-              <h1 className="text-lg font-semibold text-foreground">Fitness</h1>
-              <p className="text-xs text-muted-foreground">Treningsdagbok og aktivitetslogg</p>
+            {/* Mobile-only: PIA orb strip */}
+            <div className="lg:hidden flex flex-col items-center gap-3 px-4 py-6 border-b border-border bg-sidebar/30">
+              <PiaCoreSection compact />
             </div>
 
-            {/* Beastmaker section */}
-            <BeastmakerLogger />
+            <div className="px-4 md:px-6 py-6 space-y-4">
+              {/* Page title */}
+              <div className="mb-6">
+                <h1 className="text-lg font-semibold text-foreground">Fitness</h1>
+                <p className="text-xs text-muted-foreground">Treningsdagbok og aktivitetslogg</p>
+              </div>
 
-            <Separator className="opacity-40" />
+              {/* Beastmaker section */}
+              <BeastmakerLogger />
 
-            {/* Strava section */}
-            <StravaLog />
+              {/* Strava section */}
+              <StravaLog />
 
-            {/* Bottom padding */}
-            <div className="h-6" />
+              {/* Bottom padding */}
+              <div className="h-6" />
+            </div>
           </div>
 
-          {/* ── Right: PIA compact ───────────────────────────────── */}
-          <div className="hidden lg:flex w-72 xl:w-80 flex-col items-center overflow-y-auto px-4 py-8 gap-4 bg-sidebar/40">
+          {/* ── Right: PIA compact (desktop only) ───────────────── */}
+          <div className="hidden lg:flex w-72 xl:w-80 flex-col items-center overflow-y-auto px-4 py-8 gap-4 bg-sidebar/40 border-l border-border">
             <PiaCoreSection compact />
           </div>
 

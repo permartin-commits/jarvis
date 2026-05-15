@@ -9,7 +9,8 @@ export async function GET() {
       `SELECT id, strava_id, dato, navn, type,
               distanse_km, varighet_sekunder,
               gjennomsnittsfart_kmt, hoydemeter,
-              gjennomsnittspuls, maxpuls, kalorier, raw
+              gjennomsnittspuls, maxpuls, kalorier, raw,
+              analyse_av_okt, progresjonsanalyse
        FROM "Strava"
        ORDER BY dato DESC
        LIMIT 100`
