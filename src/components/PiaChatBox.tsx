@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, FormEvent } from "react";
 import { BrainCircuit, SendHorizonal, AlertCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const WEBHOOK_URL = "https://pia.verlanse.no/webhook/pia-svar";
+const WEBHOOK_URL = "https://n8n.verlanse.no/webhook/pia-svar";
 
 interface Message {
   role: "user" | "pia";

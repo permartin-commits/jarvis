@@ -14,10 +14,10 @@ import { Tag, Pencil, X, ChevronDown, BrainCircuit, Plus, LayoutGrid, Table2, Ch
 import { toast } from "sonner";
 
 const WEBHOOK_START =
-  "https://pia.verlanse.no/webhook/5fc9c8e5-df40-4d2b-ba17-b52a5c0e5924";
+  "https://n8n.verlanse.no/webhook/5fc9c8e5-df40-4d2b-ba17-b52a5c0e5924";
 
 const WEBHOOK_ASK_PIA =
-  "https://pia.verlanse.no/webhook/5fc9c8e5-df40-4d2b-ba17-b52a5c0e5924";
+  "https://n8n.verlanse.no/webhook/5fc9c8e5-df40-4d2b-ba17-b52a5c0e5924";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

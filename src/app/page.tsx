@@ -54,6 +54,8 @@ async function getAiCostNok(): Promise<number> {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   let totalInvestert = 0;
   let totalAvkastningPct: number | null = null;
@@ -90,7 +92,14 @@ export default async function Home() {
   }) + " kr";
 
   const timeOfDay = (() => {
-    const h = new Date().getHours();
+    const h = parseInt(
+      new Intl.DateTimeFormat("nb-NO", {
+        timeZone: "Europe/Oslo",
+        hour: "numeric",
+        hour12: false,
+      }).format(new Date()),
+      10
+    );
     if (h < 6)  return "God natt";
     if (h < 12) return "God morgen";
     if (h < 18) return "God dag";

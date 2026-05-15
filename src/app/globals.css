@@ -78,3 +78,22 @@
     text-wrap: balance;
   }
 }
+
+/* ── Themed scrollbars ────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: oklch(1 0 0 / 10%);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(1 0 0 / 18%);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}

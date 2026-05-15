@@ -61,7 +61,7 @@ type SRConstructor = new () => SR;
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const WEBHOOK_URL = "https://pia.verlanse.no/webhook/pia-svar";
+const WEBHOOK_URL = "https://n8n.verlanse.no/webhook/pia-svar";
 
 // ── TTS helpers ───────────────────────────────────────────────────────────────
 
@@ -129,10 +129,12 @@ function PiaOrb({
   isListening,
   onClick,
   supported,
+  size = 200,
 }: {
   isListening: boolean;
   onClick: () => void;
   supported: boolean;
+  size?: number;
 }) {
   return (
     <button
@@ -151,7 +153,7 @@ function PiaOrb({
         "outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
         supported ? "cursor-pointer" : "cursor-default"
       )}
-      style={{ width: 200, height: 200 }}
+      style={{ width: size, height: size }}
     >
       {/* Listening pulse rings */}
       {isListening && (
@@ -194,8 +196,8 @@ function PiaOrb({
       />
 
       <svg
-        width="200"
-        height="200"
+        width={size}
+        height={size}
         viewBox="0 0 200 200"
         fill="none"
         className="absolute inset-0"
@@ -334,7 +336,13 @@ function PiaOrb({
 
 // ── Main component ─────────────────────────────────────────────────────────────
 
-export function PiaCoreSection({ greeting }: { greeting: string }) {
+export function PiaCoreSection({
+  greeting = "",
+  compact = false,
+}: {
+  greeting?: string;
+  compact?: boolean;
+}) {
   const [input, setInput]             = useState("");
   const [messages, setMessages]       = useState<Message[]>([]);
   const [loading, setLoading]         = useState(false);
@@ -534,25 +542,33 @@ export function PiaCoreSection({ greeting }: { greeting: string }) {
         isListening={isListening}
         onClick={toggleListening}
         supported={!micUnsupported}
+        size={compact ? 120 : 200}
       />
 
       {/* ── Label ────────────────────────────────────────────────── */}
-      <div className="text-center space-y-1.5">
-        <h2 className="text-2xl font-bold tracking-[0.45em] uppercase bg-gradient-to-r from-primary via-primary/60 to-primary bg-clip-text text-transparent">
+      <div className="text-center space-y-1">
+        <h2 className={cn(
+          "font-bold tracking-[0.45em] uppercase bg-gradient-to-r from-primary via-primary/60 to-primary bg-clip-text text-transparent",
+          compact ? "text-base" : "text-2xl"
+        )}>
           PIA
         </h2>
-        <p className="text-[10px] tracking-[0.35em] uppercase text-muted-foreground/60">
-          Master OS
-        </p>
+        {!compact && (
+          <p className="text-[10px] tracking-[0.35em] uppercase text-muted-foreground/60">
+            Master OS
+          </p>
+        )}
       </div>
 
-      {/* ── Greeting ─────────────────────────────────────────────── */}
-      <p className="text-base font-medium text-foreground/75 text-center">
-        {greeting} Per Martin, hva vil du gjøre i dag?
-      </p>
+      {/* ── Greeting (full mode only) ─────────────────────────────── */}
+      {!compact && (
+        <p className="text-base font-medium text-foreground/75 text-center">
+          {greeting} Per Martin, hva vil du gjøre i dag?
+        </p>
+      )}
 
       {/* ── Chat area ────────────────────────────────────────────── */}
-      <div className="w-full max-w-xl flex flex-col gap-3">
+      <div className={cn("w-full flex flex-col gap-3", compact ? "max-w-full" : "max-w-xl")}>
 
         {/* Message thread */}
         {hasMessages && (
@@ -706,8 +722,8 @@ export function PiaCoreSection({ greeting }: { greeting: string }) {
           </button>
         </form>
 
-        {/* Footer hint */}
-        {!hasMessages && (
+        {/* Footer hint (full mode only) */}
+        {!compact && !hasMessages && (
           <p className="text-center text-[10px] text-muted-foreground/50">
             {isListening
               ? "Snakker nå — klikk på orben eller mikrofon-ikonet for å stoppe"
