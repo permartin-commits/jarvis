@@ -46,7 +46,7 @@ async function getAiCostNok(): Promise<number> {
       "SELECT COALESCE(SUM(api_kostnad_usd), 0) AS total_usd FROM ai_logger"
     ).then((r) => Number(r.rows[0]?.total_usd ?? 0)).catch(() => 0),
     query<{ total_usd: string }>(
-      `SELECT COALESCE(SUM(kostnad_usd), 0) AS total_usd FROM "Pia_usage_log"`
+      `SELECT COALESCE(SUM(kostnad_usd), 0) AS total_usd FROM pia_usage_log`
     ).then((r) => Number(r.rows[0]?.total_usd ?? 0)).catch(() => 0),
   ]);
   return (ai + pia) * USD_TO_NOK;

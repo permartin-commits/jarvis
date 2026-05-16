@@ -16,6 +16,7 @@ import {
   Zap,
   Volume2,
   VolumeX,
+  RotateCcw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -351,6 +352,22 @@ export function PiaCoreSection({
   const [micUnsupported, setMicUnsupported] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [isSpeaking, setIsSpeaking]     = useState(false);
+  const [sessionId, setSessionId]       = useState("");
+
+  function newSessionId(): string {
+    return `pia_main_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  }
+
+  function startNewConversation() {
+    recognitionRef.current?.abort();
+    window.speechSynthesis?.cancel();
+    setMessages([]);
+    setInput("");
+    setError(null);
+    setIsListening(false);
+    setIsSpeaking(false);
+    setSessionId(newSessionId());
+  }
 
   const bottomRef      = useRef<HTMLDivElement>(null);
   const inputRef       = useRef<HTMLInputElement>(null);
@@ -363,6 +380,13 @@ export function PiaCoreSection({
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, loading]);
+
+  // ── Session ID — generate once on mount ──────────────────────────────────
+
+  useEffect(() => {
+    setSessionId(newSessionId());
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Cleanup on unmount ────────────────────────────────────────────────────
 
@@ -509,7 +533,7 @@ export function PiaCoreSection({
       const res = await fetch(CHAT_API, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sporsmal: trimmed, sessionId: "per_martin_web" }),
+        body: JSON.stringify({ sporsmal: trimmed, sessionId }),
       });
 
       const data = (await res.json()) as { svar?: string; error?: string };
@@ -569,6 +593,21 @@ export function PiaCoreSection({
 
       {/* ── Chat area ────────────────────────────────────────────── */}
       <div className={cn("w-full flex flex-col gap-3", compact ? "max-w-full" : "max-w-xl")}>
+
+        {/* Ny samtale */}
+        {hasMessages && (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={startNewConversation}
+              disabled={loading}
+              className="flex items-center gap-1.5 rounded-full border border-border/50 bg-secondary/30 px-3 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:border-border transition-all active:scale-95"
+            >
+              <RotateCcw className="h-3 w-3" />
+              Ny samtale
+            </button>
+          </div>
+        )}
 
         {/* Message thread */}
         {hasMessages && (

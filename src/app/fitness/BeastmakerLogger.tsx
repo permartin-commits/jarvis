@@ -385,11 +385,12 @@ export function BeastmakerLogger() {
                 </p>
               ) : (
                 <>
-                  <div className="grid grid-cols-[1fr_auto_auto_auto] px-4 py-2 bg-secondary/20 border-b border-border/60 text-[10px] font-medium uppercase tracking-wider text-muted-foreground gap-x-4">
+                  {/* Table header */}
+                  <div className="flex items-center gap-3 px-4 py-2 bg-secondary/20 border-b border-border/60 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                     <button
                       type="button"
                       onClick={() => toggleSort("dato")}
-                      className="flex items-center gap-1 hover:text-foreground transition-colors text-left"
+                      className="flex-1 flex items-center gap-1 hover:text-foreground transition-colors text-left"
                     >
                       Dato <SortIcon col="dato" />
                     </button>
@@ -397,42 +398,42 @@ export function BeastmakerLogger() {
                       type="button"
                       onClick={cycleFilterCm}
                       className={cn(
-                        "flex items-center gap-1 hover:text-foreground transition-colors",
+                        "w-16 flex items-center gap-1 hover:text-foreground transition-colors",
                         filterCm !== "all" && "text-primary"
                       )}
                       title="Klikk for å filtrere på grep"
                     >
-                      <Filter className="h-3 w-3" />
+                      <Filter className="h-3 w-3 shrink-0" />
                       {filterCm === "all" ? "Grep" : `${filterCm} cm`}
                     </button>
                     <button
                       type="button"
                       onClick={() => toggleSort("varighet_sekunder")}
-                      className="flex items-center gap-1 hover:text-foreground transition-colors"
+                      className="w-14 flex items-center justify-end gap-1 hover:text-foreground transition-colors"
                     >
                       Tid <SortIcon col="varighet_sekunder" />
                     </button>
-                    <span className="text-right">Vekt</span>
+                    <span className="w-16 text-right shrink-0">Vekt</span>
                   </div>
 
                   <div className="divide-y divide-border/60">
                     {displayed.map((s) => (
                       <div key={s.id} className="px-4 py-3 hover:bg-secondary/20 transition-colors">
-                        <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-4 items-baseline">
-                          <span className="text-xs font-medium text-foreground">
+                        <div className="flex items-baseline gap-3">
+                          <span className="flex-1 text-xs font-medium text-foreground">
                             {formatDate(s.starttid)}
                           </span>
                           <span className={cn(
-                            "text-xs font-semibold tabular-nums",
+                            "w-16 text-xs font-semibold tabular-nums",
                             s.cm_grip === 1 ? "text-emerald-400" :
                             s.cm_grip === 2 ? "text-yellow-400" : "text-orange-400"
                           )}>
                             {s.cm_grip} cm
                           </span>
-                          <span className="text-xs tabular-nums text-foreground">
+                          <span className="w-14 text-right text-xs tabular-nums text-foreground shrink-0">
                             {formatDuration(s.varighet_sekunder)}
                           </span>
-                          <span className="text-xs tabular-nums text-muted-foreground text-right min-w-[52px]">
+                          <span className="w-16 text-right text-xs tabular-nums text-muted-foreground shrink-0">
                             {s.med_vekt
                               ? s.ekstravekt_kg ? `+${s.ekstravekt_kg} kg` : "Ja"
                               : "—"}
