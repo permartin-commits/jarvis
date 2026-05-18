@@ -66,8 +66,33 @@ const CHAT_API = "/api/pia-chat";
 
 // ── TTS helpers ───────────────────────────────────────────────────────────────
 
+/** Remove emoji / pictographs without RegExp `\p{…}` (avoids TS ES5-target build failures). */
+function stripEmojiAndPictographs(text: string): string {
+  let out = "";
+  for (let i = 0; i < text.length; ) {
+    const cp = text.codePointAt(i)!;
+    const len = cp > 0xffff ? 2 : 1;
+    // Approximates Unicode Extended_Pictographic + common emoji-related symbols (covers typical chat/markdown).
+    const drop =
+      (cp >= 0x1f000 && cp <= 0x1fffd) ||
+      (cp >= 0x2600 && cp <= 0x26ff) ||
+      (cp >= 0x2700 && cp <= 0x27bf) ||
+      (cp >= 0x2300 && cp <= 0x23ff) ||
+      (cp >= 0x24c2 && cp <= 0x24c2) ||
+      (cp >= 0x25aa && cp <= 0x25fe) ||
+      (cp >= 0x2b05 && cp <= 0x2b07) ||
+      (cp >= 0x2b50 && cp <= 0x2b59) ||
+      (cp >= 0x3030 && cp <= 0x3030) ||
+      (cp >= 0x3297 && cp <= 0x3299) ||
+      (cp >= 0xfe0f && cp <= 0xfe0f);
+    if (!drop) out += String.fromCodePoint(cp);
+    i += len;
+  }
+  return out;
+}
+
 function stripMarkdown(text: string): string {
-  return text
+  const stripped = text
     // Replace URLs (bare or inside markdown links) with "en lenke"
     .replace(/\[([^\]]+)\]\(https?:\/\/[^)]*\)/g, "$1")
     .replace(/https?:\/\/\S+/g, "en lenke")
@@ -95,9 +120,9 @@ function stripMarkdown(text: string): string {
     // Ordered list markers
     .replace(/^[\s]*\d+\.\s+/gm, "")
     // Stray leftover symbols: #, *, _, \, backtick
-    .replace(/[#*_\\`]/g, "")
-    // Emojis — strip all pictographic / symbol characters
-    .replace(/\p{Extended_Pictographic}/gu, "")
+    .replace(/[#*_\\`]/g, "");
+
+  return stripEmojiAndPictographs(stripped)
     // Variation selectors left behind after emoji removal
     .replace(/[\uFE00-\uFE0F]/g, "")
     // Collapse 3+ newlines
