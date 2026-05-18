@@ -2,6 +2,8 @@ import { Sidebar } from "@/components/sidebar";
 import { query } from "@/lib/db";
 import { ProsjekterClient, type MasterplanRow } from "./ProsjekterClient";
 
+export const dynamic = "force-dynamic";
+
 async function getMasterplan(): Promise<MasterplanRow[]> {
   const result = await query<MasterplanRow>(
     `SELECT id, fase, oppgave, status, kategori, prioritet, prosjektplan, ai_utkast, pia_kritikk
@@ -17,10 +19,8 @@ export default async function ProsjekterPage() {
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto bg-background pt-14 md:pt-0">
-        <div className="px-4 md:px-8 py-4 md:py-6">
-          <ProsjekterClient rows={rows} />
-        </div>
+      <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background pt-14 md:pt-0">
+        <ProsjekterClient rows={rows} />
       </main>
     </div>
   );

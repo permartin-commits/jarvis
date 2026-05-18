@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Tag, Pencil, X, ChevronDown, BrainCircuit, Plus, LayoutGrid, Table2, Check, ChevronsUpDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
+import { PiaCoreSection } from "@/components/PiaCoreSection";
 
 const WEBHOOK_START =
   "https://n8n.verlanse.no/webhook/5fc9c8e5-df40-4d2b-ba17-b52a5c0e5924";
@@ -41,8 +42,12 @@ interface MappedProject extends MasterplanRow {
 
 // ── Status mapping ─────────────────────────────────────────────────────────────
 
+function normStatus(raw: string | null): string {
+  return (raw ?? "").replace(/\u00a0/g, " ").trim().toLowerCase();
+}
+
 function mapStatus(raw: string | null): MappedStatus {
-  switch (raw?.toLowerCase().trim()) {
+  switch (normStatus(raw)) {
     case "ferdig":   return "fullført";
     case "i gang":   return "aktiv";
     case "planlagt": return "idé";
@@ -50,6 +55,11 @@ function mapStatus(raw: string | null): MappedStatus {
     case "endgame":  return "visjon";
     default:         return "pause";
   }
+}
+
+/** Kan startes med «START PROSJekt» — Planlagt (eller annet status som mapper til idé‑visning). */
+function canShowStartProsjektButton(statusRaw: string | null): boolean {
+  return mapStatus(statusRaw) === "idé";
 }
 
 // ── Visual config ──────────────────────────────────────────────────────────────
@@ -66,6 +76,8 @@ const statusConfig: Record<
 };
 
 const DB_STATUSES = ["I gang", "Planlagt", "Ferdig", "På vent", "Visjon", "Endgame"];
+
+const MASTERPLAN_POLL_MS = 30_000;
 
 // ── Shared styles ──────────────────────────────────────────────────────────────
 
@@ -87,10 +99,14 @@ function EditModal({
   project,
   onClose,
   onSaved,
+  onStartProject,
+  startingIds,
 }: {
   project: MasterplanRow;
   onClose: () => void;
   onSaved: (updated: MasterplanRow) => void;
+  onStartProject: (snapshot: MasterplanRow) => Promise<boolean>;
+  startingIds: Set<number>;
 }) {
   const [oppgave, setOppgave]           = useState(project.oppgave ?? "");
   const [kategori, setKategori]         = useState(project.kategori ?? "");
@@ -104,6 +120,25 @@ function EditModal({
   const [error, setError]               = useState<string | null>(null);
 
   const hasAiContent = !!(project.ai_utkast || project.pia_kritikk);
+  const showStartButton = canShowStartProsjektButton(status);
+
+  function currentSnapshot(): MasterplanRow {
+    return {
+      ...project,
+      oppgave,
+      kategori,
+      status,
+      fase,
+      prioritet,
+      prosjektplan,
+    };
+  }
+
+  async function handleStartFromModal() {
+    setError(null);
+    const ok = await onStartProject(currentSnapshot());
+    if (ok) onClose();
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -236,18 +271,30 @@ function EditModal({
           {error && <p className="text-xs text-red-400">{error}</p>}
         </div>
 
-        <div className="flex items-center justify-between gap-3 px-5 py-4 border-t border-border shrink-0">
-          <button type="button" onClick={handleAskPia} disabled={askingPia || !prosjektplan.trim()}
-            className="flex items-center gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-            <BrainCircuit className="h-3.5 w-3.5" />
-            {askingPia ? "Sender til PIA…" : "🧠 Ask PIA / Revurder"}
-          </button>
-          <div className="flex gap-3">
-            <button onClick={onClose}
+        <div className="flex flex-col gap-3 border-t border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between shrink-0">
+          <div className="flex flex-wrap items-center gap-2">
+            {showStartButton && (
+              <button
+                type="button"
+                onClick={handleStartFromModal}
+                disabled={startingIds.has(project.id)}
+                className="flex items-center gap-2 rounded-md border border-purple-500/40 bg-purple-500/10 px-4 py-2 text-xs font-semibold text-purple-300 transition-colors hover:bg-purple-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {startingIds.has(project.id) ? "Starter The Night Shift…" : "🚀 START PROSJEKT"}
+              </button>
+            )}
+            <button type="button" onClick={handleAskPia} disabled={askingPia || !prosjektplan.trim()}
+              className="flex items-center gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+              <BrainCircuit className="h-3.5 w-3.5" />
+              {askingPia ? "Sender til PIA…" : "🧠 Ask PIA / Revurder"}
+            </button>
+          </div>
+          <div className="flex gap-3 sm:shrink-0">
+            <button type="button" onClick={onClose}
               className="rounded-md border border-border bg-transparent px-4 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
               Avbryt
             </button>
-            <button onClick={handleSave} disabled={saving}
+            <button type="button" onClick={handleSave} disabled={saving}
               className="rounded-md bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors">
               {saving ? "Lagrer…" : "Lagre"}
             </button>
@@ -480,12 +527,25 @@ function TableRow({
     "w-full rounded border border-primary/40 bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50";
 
   return (
-    <tr className={cn("border-b border-border/50 transition-colors", editing ? "bg-primary/5" : "hover:bg-secondary/20")}>
+    <tr
+      className={cn(
+        "border-b border-border/50 transition-colors",
+        editing ? "bg-primary/5" : "hover:bg-secondary/20 cursor-pointer"
+      )}
+      onClick={(e) => {
+        if (editing) return;
+        const el = (e.target as HTMLElement).closest(
+          "button, a, input, select, textarea"
+        );
+        if (el) return;
+        onEdit(p);
+      }}
+    >
       {/* ID */}
       <td className={cn(cellCls, "text-xs text-muted-foreground w-10 align-middle")}>{p.id}</td>
 
       {/* Oppgave */}
-      <td className={cn(cellCls, "w-[220px] max-w-[220px]")}>
+      <td className={cn(cellCls, "min-w-0 w-[26%]")}>
         {editing ? (
           <input value={oppgave} onChange={(e) => setOppgave(e.target.value)} className={inlineCls} />
         ) : (
@@ -494,7 +554,7 @@ function TableRow({
       </td>
 
       {/* Fase */}
-      <td className={cn(cellCls, "w-[140px] max-w-[140px]")}>
+      <td className={cn(cellCls, "min-w-0 w-[12%]")}>
         {editing ? (
           <input value={fase} onChange={(e) => setFase(e.target.value)} className={inlineCls} />
         ) : (
@@ -503,7 +563,7 @@ function TableRow({
       </td>
 
       {/* Status */}
-      <td className={cn(cellCls, "w-[120px] align-middle")}>
+      <td className={cn(cellCls, "w-[11%] min-w-[6.5rem] align-middle")}>
         {editing ? (
           <select value={status} onChange={(e) => setStatus(e.target.value)} className={inlineCls}>
             {DB_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -517,7 +577,7 @@ function TableRow({
       </td>
 
       {/* Kategori */}
-      <td className={cn(cellCls, "w-[240px] max-w-[240px]")}>
+      <td className={cn(cellCls, "min-w-0 w-[23%]")}>
         {editing ? (
           <input value={kategori} onChange={(e) => setKategori(e.target.value)} className={inlineCls} />
         ) : (
@@ -526,7 +586,7 @@ function TableRow({
       </td>
 
       {/* Prioritet */}
-      <td className={cn(cellCls, "w-[100px] max-w-[100px]")}>
+      <td className={cn(cellCls, "w-[9%] min-w-[5rem]")}>
         {editing ? (
           <input value={prioritet} onChange={(e) => setPrioritet(e.target.value)}
             placeholder="f.eks. Høy" className={inlineCls} />
@@ -536,7 +596,10 @@ function TableRow({
       </td>
 
       {/* Actions */}
-      <td className={cn(cellCls, "w-[100px]")}>
+      <td
+        className={cn(cellCls, "w-[5.5rem] shrink-0")}
+        onClick={(e) => e.stopPropagation()}
+      >
         {editing ? (
           <div className="flex items-center gap-1.5">
             <button onClick={handleSave} disabled={saving}
@@ -551,14 +614,15 @@ function TableRow({
           </div>
         ) : (
           <div className="flex items-center gap-1.5">
-            <button onClick={() => setEditing(true)}
-              className="rounded border border-border px-2 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors">
-              <Pencil className="h-3 w-3" />
-            </button>
-            <button onClick={() => onEdit(p)}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditing(true);
+              }}
               className="rounded border border-border px-2 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
-              title="Åpne i fullskjerm modal">
-              <ChevronDown className="h-3 w-3 -rotate-90" />
+              title="Inline redigering">
+              <Pencil className="h-3 w-3" />
             </button>
           </div>
         )}
@@ -622,7 +686,16 @@ function TableView({
   return (
     <div className="rounded-lg border border-border overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full min-w-0 table-fixed border-collapse text-left">
+          <colgroup>
+            <col className="w-9" />
+            <col className="w-[26%]" />
+            <col className="w-[12%]" />
+            <col className="w-[11%]" />
+            <col className="w-[23%]" />
+            <col className="w-[9%]" />
+            <col className="w-[5.5rem]" />
+          </colgroup>
           <thead>
             <tr className="border-b border-border bg-secondary/30">
               {cols.map(({ key, label }) => (
@@ -630,13 +703,13 @@ function TableView({
                   onClick={() => handleSort(key)}
                   className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors"
                 >
-                  <span className="flex items-center gap-1">
+                  <span className="flex min-w-0 items-center gap-1">
                     {label}
                     <SortIcon col={key} />
                   </span>
                 </th>
               ))}
-              <th className="px-3 py-2.5 w-[100px]" />
+              <th className="px-3 py-2.5 w-[5.5rem]" />
             </tr>
           </thead>
           <tbody>
@@ -664,10 +737,36 @@ export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] 
   const [editing, setEditing]     = useState<MasterplanRow | null>(null);
   const [creating, setCreating]   = useState(false);
   const [startingIds, setStartingIds] = useState<Set<number>>(new Set());
-  const [viewMode, setViewMode]   = useState<"cards" | "table">("cards");
+  const [viewMode, setViewMode]   = useState<"cards" | "table">("table");
 
-  async function handleStartProject(p: MappedProject) {
+  const fetchMasterplan = useCallback(async () => {
+    try {
+      const res = await fetch("/api/masterplan", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = (await res.json()) as { rows?: MasterplanRow[] };
+      if (Array.isArray(data.rows)) setRows(data.rows);
+    } catch {
+      /* ignore network errors during poll */
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMasterplan();
+    const id = setInterval(fetchMasterplan, MASTERPLAN_POLL_MS);
+    return () => clearInterval(id);
+  }, [fetchMasterplan]);
+
+  useEffect(() => {
+    function onFocus() {
+      fetchMasterplan();
+    }
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [fetchMasterplan]);
+
+  async function handleStartProject(p: MasterplanRow): Promise<boolean> {
     setStartingIds((prev) => new Set(prev).add(p.id));
+    let success = false;
     try {
       const patchRes = await fetch(`/api/masterplan/${p.id}`, {
         method: "PATCH",
@@ -685,6 +784,7 @@ export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] 
       toast.success(`Prosjekt startet: ${p.oppgave ?? p.id}`, {
         description: "Status satt til «I gang» og The Night Shift er varslet.",
       });
+      success = true;
     } catch (err) {
       toast.error("Kunne ikke starte prosjektet", {
         description: err instanceof Error ? err.message : "Ukjent feil",
@@ -696,6 +796,7 @@ export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] 
         return next;
       });
     }
+    return success;
   }
 
   const uniqueFaser = useMemo(
@@ -727,8 +828,16 @@ export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] 
 
   return (
     <>
+      <div className="flex min-h-0 w-full flex-1 overflow-hidden">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
+          {/* Mobile — PIA øverst, som på Fitness */}
+          <div className="flex flex-col items-center gap-3 border-b border-border bg-sidebar/30 px-4 py-6 lg:hidden">
+            <PiaCoreSection compact />
+          </div>
+
+          <div className="px-4 py-4 md:px-8 md:py-6">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3 mb-8">
+      <div className="mb-8 flex flex-wrap items-center gap-3">
         <select value={faseFilter} onChange={(e) => setFase(e.target.value)}
           className={cn(selectCls, "min-w-[180px]")}>
           <option value="alle">Alle faser</option>
@@ -791,18 +900,39 @@ export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] 
       {/* Cards / Table view */}
       {viewMode === "cards" ? (
         <>
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
             {visible.map((p) => {
               const cfg = statusConfig[p.mappedStatus];
               return (
-                <Card key={p.id}
+                <Card
+                  key={p.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    const t = e.target as HTMLElement;
+                    if (t.closest("button")) return;
+                    setEditing(p);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      const t = e.target as HTMLElement;
+                      if (t.closest("button")) return;
+                      setEditing(p);
+                    }
+                  }}
                   className={cn(
-                    "border-border flex flex-col hover:border-primary/30 transition-colors relative",
+                    "relative flex cursor-pointer flex-col border-border outline-none ring-primary/40 transition-colors hover:border-primary/30 focus-visible:ring-2",
                     cfg.cardBg
                   )}
                 >
-                  <button onClick={() => setEditing(p)}
-                    className="absolute top-3 right-3 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditing(p);
+                    }}
+                    className="absolute right-3 top-3 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground"
                     title="Rediger">
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
@@ -821,22 +951,34 @@ export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] 
                     )}
                   </CardHeader>
 
-                  <CardContent className="flex-1 flex flex-col justify-between gap-4">
+                  <CardContent className="flex flex-1 flex-col justify-between gap-4">
+                    {canShowStartProsjektButton(p.status) && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void handleStartProject(p);
+                        }}
+                        disabled={startingIds.has(p.id)}
+                        className="w-full shrink-0 rounded-md border border-purple-500/40 bg-purple-500/10 px-3 py-2 text-xs font-semibold text-purple-300 transition-colors hover:bg-purple-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {startingIds.has(p.id) ? "Starter The Night Shift…" : "🚀 START PROSJEKT"}
+                      </button>
+                    )}
                     {p.fase && (
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Tag className="h-3.5 w-3.5 shrink-0" />
                         <span>{p.fase}</span>
                       </div>
                     )}
-                    {p.mappedStatus === "idé" && (
-                      <button onClick={() => handleStartProject(p)} disabled={startingIds.has(p.id)}
-                        className="w-full rounded-md border border-purple-500/40 bg-purple-500/10 px-3 py-2 text-xs font-semibold text-purple-300 hover:bg-purple-500/20 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
-                        {startingIds.has(p.id) ? "Starter The Night Shift…" : "🚀 START PROSJEKT"}
-                      </button>
-                    )}
                     {p.mappedStatus === "aktiv" && (
-                      <button onClick={() => console.log("ASK PIA:", p.oppgave, p.id)}
-                        className="w-full rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20 transition-colors">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditing(p);
+                        }}
+                        className="w-full rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300 transition-colors hover:bg-emerald-500/20">
                         🧠 ASK PIA
                       </button>
                     )}
@@ -859,9 +1001,25 @@ export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] 
         />
       )}
 
+          <div className="h-6" />
+          </div>
+        </div>
+
+        {/* Desktop — PIA høyre kolonne */}
+        <div className="hidden w-72 shrink-0 flex-col items-center gap-4 overflow-y-auto border-l border-border bg-sidebar/40 px-4 py-8 lg:flex xl:w-80">
+          <PiaCoreSection compact />
+        </div>
+      </div>
+
       {/* Edit modal */}
       {editing && (
-        <EditModal project={editing} onClose={() => setEditing(null)} onSaved={handleSaved} />
+        <EditModal
+          project={editing}
+          onClose={() => setEditing(null)}
+          onSaved={handleSaved}
+          onStartProject={handleStartProject}
+          startingIds={startingIds}
+        />
       )}
 
       {/* New project modal */}

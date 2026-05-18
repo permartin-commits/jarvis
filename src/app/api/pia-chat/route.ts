@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const TIMEOUT_MS = 30_000;
+/** Tid vi venter på svar fra n8n-webhook (PIA); må matche eller underskride hosts maxDuration på serverless. */
+export const maxDuration = 150;
+
+const TIMEOUT_MS = 120_000;
 
 export async function POST(req: NextRequest) {
   const webhookUrl = process.env.N8N_WEBHOOK_URL;
@@ -50,7 +53,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
       return NextResponse.json(
-        { error: "PIA svarte ikke innen 30 sekunder. Prøv igjen." },
+        { error: "PIA svarte ikke innen 2 minutter. Prøv igjen." },
         { status: 504 }
       );
     }

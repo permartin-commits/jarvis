@@ -96,12 +96,25 @@ function stripMarkdown(text: string): string {
     .replace(/^[\s]*\d+\.\s+/gm, "")
     // Stray leftover symbols: #, *, _, \, backtick
     .replace(/[#*_\\`]/g, "")
+    // Emojis — strip all pictographic / symbol characters
+    .replace(/\p{Extended_Pictographic}/gu, "")
+    // Variation selectors left behind after emoji removal
+    .replace(/[\uFE00-\uFE0F]/g, "")
     // Collapse 3+ newlines
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
 
-// Pick the best available Norwegian voice, preferring Google > Nora > any nb voice
+// Pick the best available calm female Norwegian voice.
+// Scoring:  5 = Microsoft Nora Natural (best — calm, female, online)
+//           4 = any "Natural" nb/no voice with a female name
+//           3 = Google Norsk (female by default)
+//           2 = Nora / Astrid / Ingrid / Hulda (known female names)
+//           1 = any other nb/no voice
+//           -1 = skip (wrong language or known male name)
+const FEMALE_NAMES = ["nora", "astrid", "ingrid", "hulda", "marit", "kari"];
+const MALE_NAMES   = ["rasmus", "vetle", "mikkel", "olav", "christian"];
+
 function pickNorwegianVoice(): SpeechSynthesisVoice | null {
   if (typeof window === "undefined" || !window.speechSynthesis) return null;
   const voices = window.speechSynthesis.getVoices();
@@ -110,15 +123,23 @@ function pickNorwegianVoice(): SpeechSynthesisVoice | null {
     const name = v.name.toLowerCase();
     const lang = v.lang.toLowerCase();
     if (!lang.startsWith("nb") && !lang.startsWith("no")) return -1;
+    if (MALE_NAMES.some((m) => name.includes(m))) return -1;
+
+    // Microsoft Nora Natural — top pick
+    if (name.includes("nora") && name.includes("natural")) return 5;
+    // Any Natural nb/no voice with a female name
+    if (name.includes("natural") && FEMALE_NAMES.some((f) => name.includes(f))) return 4;
+    // Google Norsk
     if (name.includes("google") && (name.includes("no") || name.includes("norsk"))) return 3;
-    if (name.includes("nora")) return 2;
-    if (name.includes("google")) return 1;
-    return 0;
+    // Known female names
+    if (FEMALE_NAMES.some((f) => name.includes(f))) return 2;
+    // Any remaining nb/no
+    return 1;
   };
 
   const ranked = voices
     .map((v) => ({ v, s: score(v) }))
-    .filter(({ s }) => s >= 0)
+    .filter(({ s }) => s > 0)
     .sort((a, b) => b.s - a.s);
 
   return ranked[0]?.v ?? null;
@@ -409,7 +430,7 @@ export function PiaCoreSection({
     const fire = () => {
       const utterance = new SpeechSynthesisUtterance(clean);
       utterance.lang  = "nb-NO";
-      utterance.rate  = 1.15;
+      utterance.rate  = 2.0;
       utterance.pitch = 1;
 
       const voice = pickNorwegianVoice();

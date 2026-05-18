@@ -1,6 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
+export async function GET() {
+  try {
+    const result = await query(
+      `SELECT id, fase, oppgave, status, kategori, prioritet, prosjektplan, ai_utkast, pia_kritikk
+       FROM masterplan
+       ORDER BY id ASC`
+    );
+    return NextResponse.json({ rows: result.rows });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Ukjent feil";
+    return NextResponse.json({ error: message, rows: [] }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   let body: {
     fase?: string;
