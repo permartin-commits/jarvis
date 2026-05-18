@@ -13,6 +13,7 @@ import {
   CircleDollarSign,
   Dumbbell,
   BrainCircuit,
+  Mountain,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -22,6 +23,7 @@ const navItems = [
   { label: "Portefølje", href: "/portefolje", icon: TrendingUp },
   { label: "Prosjekter", href: "/prosjekter", icon: FolderKanban },
   { label: "Fitness",    href: "/fitness",    icon: Dumbbell },
+  { label: "Fridel",     href: "/fridel",     icon: Mountain },
   { label: "Agent",      href: "/agent",      icon: BrainCircuit },
 ];
 

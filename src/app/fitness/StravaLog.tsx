@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import {
   Activity, X, Zap, Map, Heart, Flame, Mountain,
-  ChevronDown, Target, Lightbulb,
+  Target, Lightbulb, TrendingUp, Route, Hash,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -119,6 +119,57 @@ function activityIcon(type: string | null): string {
 
 function getPolyline(activity: StravaActivity): string | null {
   return activity.raw?.map?.summary_polyline ?? null;
+}
+
+function computeStravaSummary(activities: StravaActivity[]) {
+  let totalKm = 0;
+  let totalSec = 0;
+  for (const a of activities) {
+    const km = a.distanse_km != null ? Number(a.distanse_km) : 0;
+    const sec = a.varighet_sekunder ?? 0;
+    if (Number.isFinite(km) && km > 0) totalKm += km;
+    if (sec > 0) totalSec += sec;
+  }
+  const avgPaceSec = totalKm > 0 && totalSec > 0 ? totalSec / totalKm : null;
+  return {
+    count: activities.length,
+    totalKmFmt:
+      totalKm > 0
+        ? totalKm.toLocaleString("nb-NO", { maximumFractionDigits: 1 })
+        : "—",
+    avgPaceFmt: avgPaceSec != null ? `${formatPace(avgPaceSec)}/km` : "—",
+  };
+}
+
+function StravaHeaderStat({
+  icon,
+  label,
+  value,
+  loading,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  loading?: boolean;
+}) {
+  return (
+    <div className="flex min-w-0 flex-1 flex-col gap-0.5 rounded-lg border border-orange-500/15 bg-orange-500/[0.06] px-2.5 py-2 sm:px-3">
+      <div className="flex items-center gap-1 text-orange-400/80">
+        {icon}
+        <span className="truncate text-[9px] font-semibold uppercase tracking-wider sm:text-[10px]">
+          {label}
+        </span>
+      </div>
+      <p
+        className={cn(
+          "text-sm font-bold tabular-nums text-foreground sm:text-base",
+          loading && "animate-pulse text-muted-foreground/40"
+        )}
+      >
+        {loading ? "…" : value}
+      </p>
+    </div>
+  );
 }
 
 // ── StatChip ──────────────────────────────────────────────────────────────────
@@ -353,15 +404,17 @@ function GoalModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+const PREVIEW_COUNT = 5;
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function StravaLog() {
-  const [isOpen, setIsOpen]             = useState(false);
   const [activities, setActivities]     = useState<StravaActivity[]>([]);
   const [selected, setSelected]         = useState<StravaActivity | null>(null);
   const [loading, setLoading]           = useState(true);
   const [forslag, setForslag]           = useState<string | null>(null);
   const [showGoalModal, setShowGoalModal] = useState(false);
+  const [showAll, setShowAll]           = useState(false);
 
   useEffect(() => {
     fetch("/api/strava-activities")
@@ -370,14 +423,22 @@ export function StravaLog() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Fetch "forslag til neste aktivitet" when section opens
   useEffect(() => {
-    if (!isOpen || forslag !== null) return;
+    if (forslag !== null) return;
     fetch("/api/strava-forslag")
       .then((r) => r.json())
       .then((d) => setForslag(d.forslag ?? ""))
       .catch(() => {});
-  }, [isOpen, forslag]);
+  }, [forslag]);
+
+  const visibleActivities = showAll
+    ? activities
+    : activities.slice(0, PREVIEW_COUNT);
+  const hasMore = activities.length > PREVIEW_COUNT;
+
+  const summary = useMemo(() => computeStravaSummary(activities), [activities]);
+  const latestActivity = activities[0] ?? null;
+  const latestProgresjon = latestActivity?.progresjonsanalyse?.trim() ?? "";
 
   return (
     <div className="rounded-xl border border-border overflow-hidden">
@@ -390,43 +451,47 @@ export function StravaLog() {
         <GoalModal onClose={() => setShowGoalModal(false)} />
       )}
 
-      {/* Collapsible header — div (not button) so we can nest a button inside */}
-      <div
-        className="flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/30 transition-colors cursor-pointer select-none"
-        onClick={() => setIsOpen((v) => !v)}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setIsOpen((v) => !v); }}
-      >
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/10 ring-1 ring-orange-500/20 shrink-0">
-          <Activity className="h-4 w-4 text-orange-400" />
+      <header className="border-b border-border bg-gradient-to-br from-orange-500/[0.07] via-card to-card px-4 py-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-500/15 ring-1 ring-orange-500/25 shadow-sm shadow-orange-500/10">
+            <Activity className="h-4 w-4 text-orange-400" />
+          </div>
+          <div className="min-w-0 flex-1 pt-0.5">
+            <h2 className="text-sm font-semibold tracking-tight text-foreground">Strava</h2>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowGoalModal(true)}
+            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-orange-500/25 bg-orange-500/10 px-2.5 py-1.5 text-[11px] font-semibold text-orange-300/90 transition-colors hover:border-orange-500/40 hover:bg-orange-500/15 hover:text-orange-200"
+          >
+            <Target className="h-3.5 w-3.5" />
+            Mål
+          </button>
         </div>
-        <div className="text-left flex-1 min-w-0">
-          <h2 className="text-sm font-semibold text-foreground">Strava</h2>
-          <p className="text-xs text-muted-foreground">
-            {isOpen ? "Aktiviteter synkronisert via n8n" : loading ? "Laster…" : `${activities.length} aktiviteter`}
-          </p>
+
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          <StravaHeaderStat
+            icon={<Route className="h-3 w-3 shrink-0" />}
+            label="Totale KM"
+            value={summary.totalKmFmt === "—" ? summary.totalKmFmt : `${summary.totalKmFmt} km`}
+            loading={loading}
+          />
+          <StravaHeaderStat
+            icon={<Hash className="h-3 w-3 shrink-0" />}
+            label="Antall aktivitet"
+            value={String(summary.count)}
+            loading={loading}
+          />
+          <StravaHeaderStat
+            icon={<Zap className="h-3 w-3 shrink-0" />}
+            label="Snitt tempo"
+            value={summary.avgPaceFmt}
+            loading={loading}
+          />
         </div>
+      </header>
 
-        {/* Definer mål — stops propagation so header doesn't collapse */}
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); setShowGoalModal(true); }}
-          className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-secondary/30 px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:border-border transition-colors shrink-0"
-        >
-          <Target className="h-3 w-3" />
-          Mål
-        </button>
-
-        <ChevronDown className={cn(
-          "h-4 w-4 text-muted-foreground shrink-0 transition-transform duration-200",
-          isOpen && "rotate-180"
-        )} />
-      </div>
-
-      {/* Expanded content */}
-      {isOpen && (
-        <div className="border-t border-border">
+      <div className="border-t border-border">
           <Card className="rounded-none border-0 bg-card overflow-hidden">
             {loading ? (
               <CardContent className="py-10 text-center text-xs text-muted-foreground">
@@ -446,6 +511,36 @@ export function StravaLog() {
               </CardContent>
             ) : (
               <CardContent className="p-0">
+
+                {/* Progresjonsanalyse — siste aktivitet */}
+                <div className="border-b border-border/60 bg-gradient-to-r from-orange-500/[0.06] to-transparent px-4 py-3.5">
+                  <div className="flex gap-3">
+                    <TrendingUp className="mt-0.5 h-4 w-4 shrink-0 text-orange-400/80" />
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-orange-400/80">
+                        Progresjonsanalyse
+                      </p>
+                      {latestProgresjon ? (
+                        <p className="text-sm leading-relaxed text-foreground/85 whitespace-pre-wrap">
+                          {latestProgresjon}
+                        </p>
+                      ) : (
+                        <p className="text-xs italic text-muted-foreground/70">
+                          {latestActivity
+                            ? "Ingen progresjonsanalyse for siste aktivitet ennå."
+                            : "Ingen aktiviteter å analysere."}
+                        </p>
+                      )}
+                      {latestActivity && (
+                        <p className="text-[10px] text-muted-foreground/60">
+                          Siste: {latestActivity.navn ?? latestActivity.type ?? "Aktivitet"}
+                          {" · "}
+                          {formatDate(latestActivity.dato)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
 
                 {/* Forslag til neste aktivitet */}
                 {forslag && (
@@ -471,7 +566,7 @@ export function StravaLog() {
 
                 {/* Table rows */}
                 <div className="divide-y divide-border/60">
-                  {activities.map((a) => (
+                  {visibleActivities.map((a) => (
                     <button
                       key={a.id}
                       type="button"
@@ -498,11 +593,24 @@ export function StravaLog() {
                   ))}
                 </div>
 
+                {hasMore && (
+                  <div className="border-t border-border/60 px-4 py-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowAll((v) => !v)}
+                      className="w-full rounded-md border border-border bg-secondary/20 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
+                    >
+                      {showAll
+                        ? "Vis færre"
+                        : `Vis mer (${activities.length - PREVIEW_COUNT} til)`}
+                    </button>
+                  </div>
+                )}
+
               </CardContent>
             )}
           </Card>
-        </div>
-      )}
+      </div>
 
     </div>
   );
