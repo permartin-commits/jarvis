@@ -6,9 +6,12 @@ import { PiaCoreSection } from "@/components/PiaCoreSection";
 import { BeastmakerLogger } from "./BeastmakerLogger";
 import { BeastmakerTimer } from "./BeastmakerTimer";
 import { StravaLog } from "./StravaLog";
+import { StrengthTrainingLog } from "./StrengthTrainingLog";
+import { StrengthActionPanel } from "./StrengthActionPanel";
 
 export function FitnessShell() {
   const [beastmakerRefresh, setBeastmakerRefresh] = useState(0);
+  const [strengthRefresh, setStrengthRefresh] = useState(0);
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -22,6 +25,9 @@ export function FitnessShell() {
               <BeastmakerTimer
                 onSessionSaved={() => setBeastmakerRefresh((n) => n + 1)}
               />
+              <StrengthActionPanel
+                onWorkoutSaved={() => setStrengthRefresh((n) => n + 1)}
+              />
             </div>
 
             <div className="space-y-4 px-4 py-6 md:px-6">
@@ -33,6 +39,7 @@ export function FitnessShell() {
               </div>
 
               <StravaLog />
+              <StrengthTrainingLog refreshKey={strengthRefresh} />
               <BeastmakerLogger refreshKey={beastmakerRefresh} />
 
               <div className="h-6" />
@@ -43,6 +50,9 @@ export function FitnessShell() {
             <PiaCoreSection compact />
             <BeastmakerTimer
               onSessionSaved={() => setBeastmakerRefresh((n) => n + 1)}
+            />
+            <StrengthActionPanel
+              onWorkoutSaved={() => setStrengthRefresh((n) => n + 1)}
             />
           </div>
         </div>
