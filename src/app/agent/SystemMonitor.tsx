@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
+import { QdrantMemory } from "@/components/QdrantMemory";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -608,56 +609,59 @@ export function SystemMonitor() {
             )}
           </Panel>
 
-          {/* Docker containers */}
-          <Panel title={`▸ DOCKER CONTAINERS — ${running} kjørende / ${containers.length} totalt`}>
-            {sLoad && (
-              <p className="font-mono text-xs text-muted-foreground animate-pulse">Laster…</p>
-            )}
-            {!sLoad && containers.length === 0 && (
-              <p className="font-mono text-xs text-muted-foreground">
-                Ingen container-data. Sjekk JSONB-feltet i server_status.
-              </p>
-            )}
-            {containers.length > 0 && (
-              <div className="space-y-0">
-                {/* Header */}
-                <div className="flex items-center gap-3 pb-2 mb-1 border-b border-border font-mono text-[9px] tracking-widest uppercase text-muted-foreground">
-                  <span className="w-3 shrink-0" />
-                  <span className="flex-1">Navn</span>
-                  <span className="w-32 text-right shrink-0">Image</span>
-                  <span className="w-36 text-right shrink-0">Status</span>
-                </div>
+          {/* Docker containers + Qdrant */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <Panel title={`▸ DOCKER CONTAINERS — ${running} kjørende / ${containers.length} totalt`}>
+              {sLoad && (
+                <p className="font-mono text-xs text-muted-foreground animate-pulse">Laster…</p>
+              )}
+              {!sLoad && containers.length === 0 && (
+                <p className="font-mono text-xs text-muted-foreground">
+                  Ingen container-data. Sjekk JSONB-feltet i server_status.
+                </p>
+              )}
+              {containers.length > 0 && (
+                <div className="space-y-0">
+                  <div className="mb-1 flex items-center gap-3 border-b border-border pb-2 font-mono text-[9px] tracking-widest uppercase text-muted-foreground">
+                    <span className="w-3 shrink-0" />
+                    <span className="flex-1">Navn</span>
+                    <span className="w-32 shrink-0 text-right">Image</span>
+                    <span className="w-36 shrink-0 text-right">Status</span>
+                  </div>
 
-                {containers.map((c, i) => {
-                  const state = containerState(c);
-                  const dotClass =
-                    state === "running" ? "text-emerald-400" :
-                    state === "exited"  ? "text-red-400" :
-                    "text-yellow-400";
-                  return (
-                    <div
-                      key={c.ID ?? i}
-                      className="flex items-center gap-3 py-1.5 border-b border-border/40 last:border-0"
-                    >
-                      <span className={cn("text-xs shrink-0", dotClass)}>●</span>
-                      <span className="font-mono text-xs text-foreground flex-1 truncate">
-                        {containerName(c)}
-                      </span>
-                      <span className="font-mono text-[10px] text-muted-foreground w-32 text-right shrink-0 truncate">
-                        {c.Image ?? "—"}
-                      </span>
-                      <span className={cn(
-                        "font-mono text-[10px] w-36 text-right shrink-0",
-                        state === "running" ? "text-emerald-400/70" : "text-red-400/70"
-                      )}>
-                        {c.Status ?? c.State ?? "—"}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </Panel>
+                  {containers.map((c, i) => {
+                    const state = containerState(c);
+                    const dotClass =
+                      state === "running" ? "text-emerald-400" :
+                      state === "exited"  ? "text-red-400" :
+                      "text-yellow-400";
+                    return (
+                      <div
+                        key={c.ID ?? i}
+                        className="flex items-center gap-3 border-b border-border/40 py-1.5 last:border-0"
+                      >
+                        <span className={cn("shrink-0 text-xs", dotClass)}>●</span>
+                        <span className="flex-1 truncate font-mono text-xs text-foreground">
+                          {containerName(c)}
+                        </span>
+                        <span className="w-32 shrink-0 truncate text-right font-mono text-[10px] text-muted-foreground">
+                          {c.Image ?? "—"}
+                        </span>
+                        <span className={cn(
+                          "w-36 shrink-0 text-right font-mono text-[10px]",
+                          state === "running" ? "text-emerald-400/70" : "text-red-400/70"
+                        )}>
+                          {c.Status ?? c.State ?? "—"}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Panel>
+
+            <QdrantMemory />
+          </div>
 
         </div>
 

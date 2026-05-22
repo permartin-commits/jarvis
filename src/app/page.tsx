@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { PiaCoreSection } from "@/components/PiaCoreSection";
 import { LiveCostSub } from "@/components/LiveCostSub";
-import { QdrantMemory } from "@/components/QdrantMemory";
+import { InvestmentOverview } from "@/components/InvestmentOverview";
 
 // ── Data fetchers ─────────────────────────────────────────────────────────────
 
@@ -179,10 +179,7 @@ export default async function Home() {
             />
           </div>
 
-          {/* ── Langtidshukommelse (Qdrant) ───────────────────────── */}
-          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-            <QdrantMemory />
-          </div>
+          <InvestmentOverview />
 
         </div>
       </main>

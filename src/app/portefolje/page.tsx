@@ -10,6 +10,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Coins, TrendingUp, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PortefoljeClient } from "./PortefoljeClient";
+import { DagsrapporterPanel } from "./DagsrapporterPanel";
+import { InvestmentOverview } from "@/components/InvestmentOverview";
 
 export default async function PortefoljePage() {
   const holdings    = await getPortfolioHoldings().catch(() => []);
@@ -49,6 +51,7 @@ export default async function PortefoljePage() {
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
             <div className="flex flex-col items-center gap-3 border-b border-border bg-sidebar/30 px-4 py-6 lg:hidden">
               <PiaCoreSection compact />
+              <DagsrapporterPanel />
             </div>
 
             <div className="space-y-6 px-4 py-6 md:px-8">
@@ -100,6 +103,8 @@ export default async function PortefoljePage() {
             />
           </div>
 
+          <InvestmentOverview />
+
           {/* Holdings + Watchlist */}
           {!dbError && (
             <PortefoljeClient
@@ -116,6 +121,7 @@ export default async function PortefoljePage() {
 
           <div className="hidden w-72 shrink-0 flex-col items-center gap-4 overflow-y-auto border-l border-border bg-sidebar/40 px-4 py-8 lg:flex xl:w-80">
             <PiaCoreSection compact />
+            <DagsrapporterPanel />
           </div>
         </div>
       </main>
