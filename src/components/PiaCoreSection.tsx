@@ -177,11 +177,13 @@ function PiaOrb({
   onClick,
   supported,
   size = 200,
+  hero = false,
 }: {
   isListening: boolean;
   onClick: () => void;
   supported: boolean;
   size?: number;
+  hero?: boolean;
 }) {
   return (
     <button
@@ -227,10 +229,20 @@ function PiaOrb({
           background: isListening
             ? "radial-gradient(circle, rgba(239,68,68,0.22) 0%, transparent 65%)"
             : "radial-gradient(circle, var(--primary) 0%, transparent 65%)",
-          opacity: isListening ? 0.35 : 0.12,
-          filter: "blur(30px)",
+          opacity: isListening ? 0.35 : hero ? 0.22 : 0.12,
+          filter: hero ? "blur(40px)" : "blur(30px)",
         }}
       />
+      {hero && !isListening && (
+        <span
+          className="absolute inset-0 rounded-full animate-ping"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(96,165,250,0.15) 0%, transparent 70%)",
+            animationDuration: "3s",
+          }}
+        />
+      )}
       {/* Ambient navy glow */}
       <div
         className="absolute inset-0 rounded-full"
@@ -254,8 +266,8 @@ function PiaOrb({
             <stop
               offset="0%"
               style={{
-                stopColor: isListening ? "#ef4444" : "var(--primary)",
-                stopOpacity: 0.55,
+                stopColor: isListening ? "#ef4444" : hero ? "#60a5fa" : "var(--primary)",
+                stopOpacity: hero ? 0.65 : 0.55,
               }}
             />
             <stop
@@ -359,6 +371,17 @@ function PiaOrb({
 
         {/* Core fill */}
         <circle cx="100" cy="100" r="47" fill="url(#orbFill)" filter="url(#coreBloom)" />
+        {hero && !isListening && (
+          <circle
+            cx="100"
+            cy="100"
+            r="52"
+            stroke="#93c5fd"
+            strokeWidth="0.5"
+            opacity="0.35"
+            className="animate-pulse"
+          />
+        )}
       </svg>
 
       {/* Centre icon — mic when listening, bolt otherwise */}
@@ -386,9 +409,11 @@ function PiaOrb({
 export function PiaCoreSection({
   greeting = "",
   compact = false,
+  hero = false,
 }: {
   greeting?: string;
   compact?: boolean;
+  hero?: boolean;
 }) {
   const [input, setInput]             = useState("");
   const [messages, setMessages]       = useState<Message[]>([]);
@@ -612,14 +637,18 @@ export function PiaCoreSection({
         isListening={isListening}
         onClick={toggleListening}
         supported={!micUnsupported}
-        size={compact ? 120 : 200}
+        size={compact ? 120 : hero ? 240 : 200}
+        hero={hero}
       />
 
       {/* ── Label ────────────────────────────────────────────────── */}
       <div className="text-center space-y-1">
         <h2 className={cn(
-          "font-bold tracking-[0.45em] uppercase bg-gradient-to-r from-primary via-primary/60 to-primary bg-clip-text text-transparent",
-          compact ? "text-base" : "text-2xl"
+          "font-bold tracking-[0.45em] uppercase bg-clip-text text-transparent",
+          hero
+            ? "text-3xl bg-gradient-to-r from-sky-300 via-primary to-indigo-400"
+            : "text-2xl bg-gradient-to-r from-primary via-primary/60 to-primary",
+          compact && "text-base !bg-gradient-to-r from-primary via-primary/60 to-primary"
         )}>
           PIA
         </h2>
@@ -638,7 +667,7 @@ export function PiaCoreSection({
       )}
 
       {/* ── Chat area ────────────────────────────────────────────── */}
-      <div className={cn("w-full flex flex-col gap-3", compact ? "max-w-full" : "max-w-xl")}>
+      <div className={cn("w-full flex flex-col gap-3", compact ? "max-w-full" : hero ? "max-w-2xl" : "max-w-xl")}>
 
         {/* Ny samtale */}
         {hasMessages && (

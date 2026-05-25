@@ -13,12 +13,15 @@ import { cn } from "@/lib/utils";
 import { Tag, Pencil, X, ChevronDown, BrainCircuit, Plus, LayoutGrid, Table2, Check, ChevronsUpDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { PiaCoreSection } from "@/components/PiaCoreSection";
+import {
+  ProsjekterStartupRuns,
+  dispatchStartupRun,
+  dispatchStartupFailed,
+} from "./ProsjekterStartupRuns";
 
-const WEBHOOK_START =
-  "https://n8n.verlanse.no/webhook/5fc9c8e5-df40-4d2b-ba17-b52a5c0e5924";
+const WEBHOOK_START = "/api/prosjekter-webhook";
 
-const WEBHOOK_ASK_PIA =
-  "https://n8n.verlanse.no/webhook/5fc9c8e5-df40-4d2b-ba17-b52a5c0e5924";
+const WEBHOOK_ASK_PIA = "/api/prosjekter-webhook";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -766,6 +769,7 @@ export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] 
 
   async function handleStartProject(p: MasterplanRow): Promise<boolean> {
     setStartingIds((prev) => new Set(prev).add(p.id));
+    dispatchStartupRun(p.id);
     let success = false;
     try {
       const patchRes = await fetch(`/api/masterplan/${p.id}`, {
@@ -776,16 +780,28 @@ export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] 
       if (!patchRes.ok) throw new Error("Kunne ikke oppdatere status");
       const updated: MasterplanRow = await patchRes.json();
       setRows((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
-      fetch(WEBHOOK_START, {
+
+      const webhookRes = await fetch(WEBHOOK_START, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: p.id, oppgave: p.oppgave, fase: p.fase, kategori: p.kategori }),
-      }).catch(() => {});
+        body: JSON.stringify({
+          id: p.id,
+          masterplan_id: p.id,
+          oppgave: p.oppgave,
+          fase: p.fase,
+          kategori: p.kategori,
+        }),
+      });
+      if (!webhookRes.ok) {
+        throw new Error("Webhook til Master OS feilet");
+      }
+
       toast.success(`Prosjekt startet: ${p.oppgave ?? p.id}`, {
         description: "Status satt til «I gang» og The Night Shift er varslet.",
       });
       success = true;
     } catch (err) {
+      dispatchStartupFailed(p.id);
       toast.error("Kunne ikke starte prosjektet", {
         description: err instanceof Error ? err.message : "Ukjent feil",
       });
@@ -833,6 +849,7 @@ export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] 
           {/* Mobile — PIA øverst, som på Fitness */}
           <div className="flex flex-col items-center gap-3 border-b border-border bg-sidebar/30 px-4 py-6 lg:hidden">
             <PiaCoreSection compact />
+            <ProsjekterStartupRuns />
           </div>
 
           <div className="px-4 py-4 md:px-8 md:py-6">
@@ -1008,6 +1025,7 @@ export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] 
         {/* Desktop — PIA høyre kolonne */}
         <div className="hidden w-72 shrink-0 flex-col items-center gap-4 overflow-y-auto border-l border-border bg-sidebar/40 px-4 py-8 lg:flex xl:w-80">
           <PiaCoreSection compact />
+          <ProsjekterStartupRuns />
         </div>
       </div>
 
