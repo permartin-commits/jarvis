@@ -87,7 +87,7 @@ function DailyChart({ data }: { data: DailyPoint[] }) {
               <div
                 className={
                   d.queries > 0
-                    ? "w-full max-w-8 rounded-t-md bg-gradient-to-t from-primary to-primary/40 transition-colors group-hover:from-sky-400 group-hover:to-primary/50"
+                    ? "w-full max-w-8 rounded-t-md bg-gradient-to-t from-primary to-primary/40 transition-colors group-hover:from-palette-pink group-hover:to-primary/50"
                     : "w-full max-w-8 rounded-t-sm bg-secondary/50"
                 }
                 style={{ height: barPx }}

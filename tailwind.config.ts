@@ -44,6 +44,13 @@ const config: Config = {
           },
           border: "var(--sidebar-border)",
         },
+        palette: {
+          black: "var(--palette-black)",
+          violet: "var(--palette-violet)",
+          raspberry: "var(--palette-raspberry)",
+          pink: "var(--palette-pink)",
+          white: "var(--palette-white)",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

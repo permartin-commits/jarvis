@@ -28,57 +28,85 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-palette-black: var(--palette-black);
+  --color-palette-violet: var(--palette-violet);
+  --color-palette-raspberry: var(--palette-raspberry);
+  --color-palette-pink: var(--palette-pink);
+  --color-palette-white: var(--palette-white);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* Registration Black · Russian Violet · Dark Raspberry · Paradise Pink · Anti-Flash White */
 :root {
-  --background: oklch(0.09 0.015 264);
-  --foreground: oklch(0.95 0.01 264);
-  --card: oklch(0.13 0.018 264);
-  --card-foreground: oklch(0.95 0.01 264);
-  --popover: oklch(0.13 0.018 264);
-  --popover-foreground: oklch(0.95 0.01 264);
-  --primary: oklch(0.6 0.2 264);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.18 0.02 264);
-  --secondary-foreground: oklch(0.85 0.01 264);
-  --muted: oklch(0.18 0.02 264);
-  --muted-foreground: oklch(0.55 0.02 264);
-  --accent: oklch(0.6 0.2 264);
-  --accent-foreground: oklch(0.98 0 0);
-  --destructive: oklch(0.65 0.22 27);
-  --border: oklch(1 0 0 / 8%);
-  --input: oklch(1 0 0 / 10%);
-  --ring: oklch(0.6 0.2 264);
+  --palette-black: #000000;
+  --palette-violet: #3d2645;
+  --palette-raspberry: #832161;
+  --palette-pink: #da4167;
+  --palette-white: #f0eff4;
+
+  --background: var(--palette-black);
+  --foreground: var(--palette-white);
+  --card: var(--palette-violet);
+  --card-foreground: var(--palette-white);
+  --popover: color-mix(in srgb, var(--palette-violet) 92%, var(--palette-black));
+  --popover-foreground: var(--palette-white);
+  --primary: var(--palette-raspberry);
+  --primary-foreground: var(--palette-white);
+  --secondary: color-mix(in srgb, var(--palette-violet) 75%, var(--palette-black));
+  --secondary-foreground: color-mix(in srgb, var(--palette-white) 90%, var(--palette-violet));
+  --muted: color-mix(in srgb, var(--palette-violet) 55%, var(--palette-black));
+  --muted-foreground: color-mix(in srgb, var(--palette-white) 58%, var(--palette-violet));
+  --accent: var(--palette-pink);
+  --accent-foreground: var(--palette-white);
+  --destructive: #c42d52;
+  --border: color-mix(in srgb, var(--palette-white) 14%, var(--palette-violet));
+  --input: color-mix(in srgb, var(--palette-violet) 70%, var(--palette-black));
+  --ring: var(--palette-pink);
   --radius: 0.625rem;
-  --sidebar: oklch(0.12 0.018 264);
-  --sidebar-foreground: oklch(0.85 0.01 264);
-  --sidebar-accent: oklch(0.18 0.025 264);
-  --sidebar-accent-foreground: oklch(0.95 0.01 264);
-  --sidebar-border: oklch(1 0 0 / 8%);
-  --sidebar-ring: oklch(0.6 0.2 264);
+  --sidebar: var(--palette-black);
+  --sidebar-foreground: color-mix(in srgb, var(--palette-white) 82%, var(--palette-violet));
+  --sidebar-accent: var(--palette-violet);
+  --sidebar-accent-foreground: var(--palette-white);
+  --sidebar-border: color-mix(in srgb, var(--palette-raspberry) 22%, var(--palette-violet));
+  --sidebar-ring: var(--palette-raspberry);
 }
 
-/* Litt lysere flate på forsiden — PIA i fokus */
 .home-surface {
-  --background: oklch(0.12 0.018 264);
-  --card: oklch(0.16 0.02 264);
-  --secondary: oklch(0.2 0.022 264);
-  --muted: oklch(0.2 0.022 264);
+  --background: color-mix(in srgb, var(--palette-black) 72%, var(--palette-violet));
+  --card: color-mix(in srgb, var(--palette-violet) 88%, var(--palette-black));
+  --secondary: color-mix(in srgb, var(--palette-violet) 65%, var(--palette-black));
+  --muted: color-mix(in srgb, var(--palette-violet) 50%, var(--palette-black));
   background-color: var(--background);
 }
 
 @layer base {
   * {
     border-color: var(--border);
-    outline-color: color-mix(in oklch, var(--ring) 50%, transparent);
+    outline-color: color-mix(in srgb, var(--ring) 50%, transparent);
   }
   body {
-    background-color: var(--background);
     color: var(--foreground);
+    background-color: var(--background);
+    background-image:
+      radial-gradient(
+        ellipse 85% 50% at 12% -8%,
+        color-mix(in srgb, var(--palette-raspberry) 28%, transparent),
+        transparent 58%
+      ),
+      radial-gradient(
+        ellipse 65% 45% at 100% 95%,
+        color-mix(in srgb, var(--palette-pink) 18%, transparent),
+        transparent 55%
+      ),
+      radial-gradient(
+        ellipse 55% 65% at 48% 42%,
+        color-mix(in srgb, var(--palette-violet) 35%, transparent),
+        transparent 62%
+      );
+    background-attachment: fixed;
   }
 }
 
@@ -88,7 +116,6 @@
   }
 }
 
-/* ── Themed scrollbars ────────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 4px;
   height: 4px;
@@ -97,11 +124,11 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: oklch(1 0 0 / 10%);
+  background: color-mix(in srgb, var(--palette-raspberry) 45%, var(--palette-violet));
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(1 0 0 / 18%);
+  background: color-mix(in srgb, var(--palette-pink) 55%, var(--palette-raspberry));
 }
 ::-webkit-scrollbar-corner {
   background: transparent;

@@ -185,6 +185,8 @@ function PiaOrb({
   size?: number;
   hero?: boolean;
 }) {
+  const ringStroke = "var(--palette-white)";
+
   return (
     <button
       type="button"
@@ -306,15 +308,15 @@ function PiaOrb({
           />
           <circle
             cx="100" cy="100" r="90"
-            stroke={isListening ? "#7f1d1d" : "#172554"}
+            stroke={isListening ? "#7f1d1d" : ringStroke}
             strokeWidth="0.75"
             strokeDasharray="2 10"
             opacity="0.55"
           />
-          <line x1="100" y1="4"   x2="100" y2="17"  stroke={isListening ? "#7f1d1d" : "#172554"} strokeWidth="1.5" opacity="0.7" />
-          <line x1="100" y1="183" x2="100" y2="196" stroke={isListening ? "#7f1d1d" : "#172554"} strokeWidth="1.5" opacity="0.7" />
-          <line x1="4"   y1="100" x2="17"  y2="100" stroke={isListening ? "#7f1d1d" : "#172554"} strokeWidth="1.5" opacity="0.7" />
-          <line x1="183" y1="100" x2="196" y2="100" stroke={isListening ? "#7f1d1d" : "#172554"} strokeWidth="1.5" opacity="0.7" />
+          <line x1="100" y1="4"   x2="100" y2="17"  stroke={isListening ? "#7f1d1d" : ringStroke} strokeWidth="1.5" opacity="0.7" />
+          <line x1="100" y1="183" x2="100" y2="196" stroke={isListening ? "#7f1d1d" : ringStroke} strokeWidth="1.5" opacity="0.7" />
+          <line x1="4"   y1="100" x2="17"  y2="100" stroke={isListening ? "#7f1d1d" : ringStroke} strokeWidth="1.5" opacity="0.7" />
+          <line x1="183" y1="100" x2="196" y2="100" stroke={isListening ? "#7f1d1d" : ringStroke} strokeWidth="1.5" opacity="0.7" />
         </g>
 
         {/* Ring 2 — arc segments, CCW */}
@@ -329,7 +331,7 @@ function PiaOrb({
           />
           <circle
             cx="100" cy="100" r="74"
-            stroke={isListening ? "#991b1b" : "#1e3a8a"}
+            stroke={isListening ? "#991b1b" : ringStroke}
             strokeWidth="1.5"
             strokeDasharray="84 32"
             opacity="0.65"
@@ -349,7 +351,7 @@ function PiaOrb({
           />
           <circle
             cx="100" cy="100" r="59"
-            stroke={isListening ? "#b91c1c" : "#1d4ed8"}
+            stroke={isListening ? "#b91c1c" : ringStroke}
             strokeWidth="0.75"
             strokeDasharray="6 5"
             opacity="0.4"
@@ -359,15 +361,15 @@ function PiaOrb({
         {/* Ring 4 — solid inner ring, static */}
         <circle
           cx="100" cy="100" r="47"
-          stroke={isListening ? "#dc2626" : "#2563eb"}
+          stroke={isListening ? "#dc2626" : ringStroke}
           strokeWidth="1"
           opacity="0.55"
           filter="url(#softGlow)"
         />
 
         {/* Crosshair */}
-        <line x1="64" y1="100" x2="136" y2="100" style={{ stroke: isListening ? "#ef4444" : "var(--primary)" }} strokeWidth="0.5" opacity="0.18" />
-        <line x1="100" y1="64" x2="100" y2="136" style={{ stroke: isListening ? "#ef4444" : "var(--primary)" }} strokeWidth="0.5" opacity="0.18" />
+        <line x1="64" y1="100" x2="136" y2="100" style={{ stroke: isListening ? "#ef4444" : ringStroke }} strokeWidth="0.5" opacity="0.18" />
+        <line x1="100" y1="64" x2="100" y2="136" style={{ stroke: isListening ? "#ef4444" : ringStroke }} strokeWidth="0.5" opacity="0.18" />
 
         {/* Core fill */}
         <circle cx="100" cy="100" r="47" fill="url(#orbFill)" filter="url(#coreBloom)" />
@@ -376,7 +378,7 @@ function PiaOrb({
             cx="100"
             cy="100"
             r="52"
-            stroke="#93c5fd"
+            stroke={ringStroke}
             strokeWidth="0.5"
             opacity="0.35"
             className="animate-pulse"
@@ -646,7 +648,7 @@ export function PiaCoreSection({
         <h2 className={cn(
           "font-bold tracking-[0.45em] uppercase bg-clip-text text-transparent",
           hero
-            ? "text-3xl bg-gradient-to-r from-sky-300 via-primary to-indigo-400"
+            ? "text-3xl bg-gradient-to-r from-palette-raspberry via-primary to-palette-pink"
             : "text-2xl bg-gradient-to-r from-primary via-primary/60 to-primary",
           compact && "text-base !bg-gradient-to-r from-primary via-primary/60 to-primary"
         )}>

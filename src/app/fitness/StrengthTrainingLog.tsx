@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { normalizeCategory, type WorkoutHistoryRow } from "@/lib/strength";
+import { WorkoutDetailModal } from "./WorkoutDetailModal";
 
 const PREVIEW_COUNT = 5;
 const ALL_CATEGORY = "alle";
@@ -48,8 +49,9 @@ export function StrengthTrainingLog({ refreshKey = 0 }: { refreshKey?: number })
   const [category, setCategory] = useState<string>(ALL_CATEGORY);
   const [showAll, setShowAll] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  useEffect(() => {
+  function reload() {
     setLoading(true);
     loadWorkouts()
       .then(({ workouts: rows, categories }) => {
@@ -57,6 +59,10 @@ export function StrengthTrainingLog({ refreshKey = 0 }: { refreshKey?: number })
         setDbCategories(categories);
       })
       .finally(() => setLoading(false));
+  }
+
+  useEffect(() => {
+    reload();
   }, [refreshKey]);
 
   const filterOptions = useMemo(
@@ -76,10 +82,19 @@ export function StrengthTrainingLog({ refreshKey = 0 }: { refreshKey?: number })
   const hasMore = filtered.length > PREVIEW_COUNT;
 
   return (
-    <section className="overflow-hidden rounded-xl border border-border">
-      <header className="flex flex-wrap items-center gap-3 border-b border-border bg-gradient-to-br from-sky-500/[0.06] via-card to-card px-4 py-3.5">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sky-500/15 ring-1 ring-sky-500/25">
-          <Dumbbell className="h-4 w-4 text-sky-400" />
+    <>
+      {selectedId && (
+        <WorkoutDetailModal
+          workoutId={selectedId}
+          onClose={() => setSelectedId(null)}
+          onUpdated={reload}
+        />
+      )}
+
+      <section className="overflow-hidden rounded-xl border border-border">
+      <header className="flex flex-wrap items-center gap-3 border-b border-border bg-gradient-to-br from-primary/[0.06] via-card to-card px-4 py-3.5">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 ring-1 ring-primary/25">
+          <Dumbbell className="h-4 w-4 text-primary" />
         </div>
         <div className="min-w-0 flex-1">
           <h2 className="text-sm font-semibold tracking-tight text-foreground">
@@ -116,7 +131,7 @@ export function StrengthTrainingLog({ refreshKey = 0 }: { refreshKey?: number })
         <CardContent className="p-0">
           {loading ? (
             <div className="flex items-center justify-center gap-2 py-10 text-xs text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin text-sky-400/70" />
+              <Loader2 className="h-4 w-4 animate-spin text-primary/70" />
               Henter økter…
             </div>
           ) : filtered.length === 0 ? (
@@ -136,9 +151,11 @@ export function StrengthTrainingLog({ refreshKey = 0 }: { refreshKey?: number })
 
               <div className="divide-y divide-border/60">
                 {visibleRows.map((w) => (
-                  <div
+                  <button
                     key={w.id}
-                    className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/20"
+                    type="button"
+                    onClick={() => setSelectedId(w.id)}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-secondary/20"
                   >
                     <span className="w-24 shrink-0 text-[10px] tabular-nums text-muted-foreground/80">
                       {formatDate(w.dato)}
@@ -146,9 +163,15 @@ export function StrengthTrainingLog({ refreshKey = 0 }: { refreshKey?: number })
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-xs font-medium text-foreground">
                         {w.oktNavn}
+                        {w.isPlanned && (
+                          <span className="ml-1.5 rounded border border-amber-500/30 bg-amber-500/10 px-1 py-0.5 text-[8px] font-semibold uppercase tracking-wide text-amber-400">
+                            Plan
+                          </span>
+                        )}
                       </p>
                       <p className="truncate text-[10px] text-muted-foreground sm:hidden">
                         {w.hovedovelse ?? "—"}
+                        {w.notes ? " · notat" : ""}
                       </p>
                     </div>
                     <span className="hidden w-32 shrink-0 truncate text-xs text-muted-foreground sm:inline">
@@ -164,7 +187,7 @@ export function StrengthTrainingLog({ refreshKey = 0 }: { refreshKey?: number })
                     >
                       {formatVolume(w.totaltVolumKg)}
                     </span>
-                  </div>
+                  </button>
                 ))}
               </div>
 
@@ -173,7 +196,7 @@ export function StrengthTrainingLog({ refreshKey = 0 }: { refreshKey?: number })
                   <button
                     type="button"
                     onClick={() => setShowAll((v) => !v)}
-                    className="w-full rounded-md border border-border bg-secondary/20 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-sky-500/30 hover:text-foreground"
+                    className="w-full rounded-md border border-border bg-secondary/20 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
                   >
                     {showAll
                       ? "Vis færre"
@@ -186,5 +209,6 @@ export function StrengthTrainingLog({ refreshKey = 0 }: { refreshKey?: number })
         </CardContent>
       </Card>
     </section>
+    </>
   );
 }

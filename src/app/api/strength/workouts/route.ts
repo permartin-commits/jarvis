@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { PoolClient } from "pg";
 import { getDb, query } from "@/lib/db";
 import {
   getFitnessUserId,
@@ -12,6 +13,8 @@ interface HistoryDbRow {
   id: string;
   name: string;
   started_at: string;
+  completed_at: string | null;
+  notes: string | null;
   hovedovelse: string | null;
   kategori: string | null;
   totalt_volum: string | null;
@@ -63,6 +66,8 @@ export async function GET() {
          w.id,
          w.name,
          w.started_at,
+         w.completed_at,
+         w.notes,
          me.exercise_name AS hovedovelse,
          me.category AS kategori,
          COALESCE(wv.totalt_volum, 0) AS totalt_volum,
@@ -83,6 +88,8 @@ export async function GET() {
       kategori: row.kategori,
       totaltVolumKg: Number(row.totalt_volum ?? 0),
       categories: row.categories ?? [],
+      notes: row.notes,
+      isPlanned: row.completed_at == null,
     }));
 
     const catResult = await query<{ category: string }>(
@@ -99,32 +106,88 @@ export async function GET() {
   }
 }
 
+async function saveWorkoutTemplate(
+  client: PoolClient,
+  userId: string,
+  name: string,
+  notes: string | null,
+  exercises: { exerciseId: string; setCount: number }[]
+) {
+  const templateResult = await client.query<{ id: string }>(
+    `INSERT INTO workout_templates (user_id, name, notes, updated_at)
+     VALUES ($1, $2, $3, NOW())
+     ON CONFLICT (user_id, name)
+     DO UPDATE SET
+       notes = EXCLUDED.notes,
+       updated_at = NOW()
+     RETURNING id`,
+    [userId, name, notes]
+  );
+
+  const templateId = templateResult.rows[0]?.id;
+  if (!templateId) return;
+
+  await client.query(
+    `DELETE FROM workout_template_exercises WHERE template_id = $1`,
+    [templateId]
+  );
+
+  if (exercises.length === 0) return;
+
+  const values: unknown[] = [];
+  const placeholders: string[] = [];
+  let i = 1;
+
+  for (let sortOrder = 0; sortOrder < exercises.length; sortOrder++) {
+    const ex = exercises[sortOrder];
+    placeholders.push(`($${i++}, $${i++}, $${i++}, $${i++})`);
+    values.push(templateId, ex.exerciseId, sortOrder, Math.max(1, ex.setCount));
+  }
+
+  await client.query(
+    `INSERT INTO workout_template_exercises
+       (template_id, exercise_id, sort_order, default_set_count)
+     VALUES ${placeholders.join(", ")}`,
+    values
+  );
+}
+
 export async function POST(req: NextRequest) {
   const body = (await req.json()) as {
     name?: string;
+    notes?: string | null;
     sets?: WorkoutSetPayload[];
+    saveAsTemplate?: boolean;
+    finish?: boolean;
+    templateExercises?: { exerciseId: string; setCount: number }[];
   };
 
   const name = body.name?.trim() || "Styrkeøkt";
-  const sets = (body.sets ?? []).filter((s) => s.isCompleted);
+  const notes = body.notes?.trim() || null;
+  const allSets = body.sets ?? [];
+  const finish = body.finish !== false;
+  const completedSets = allSets.filter((s) => s.isCompleted);
+  const setsToStore = finish ? completedSets : allSets;
 
-  if (sets.length === 0) {
+  if (finish && completedSets.length === 0) {
     return NextResponse.json(
-      { error: "Ingen fullførte sett å lagre." },
+      { error: "Marker minst ett sett som fullført." },
       { status: 400 }
     );
   }
 
+  const userId = getFitnessUserId();
   const client = await getDb().connect();
 
   try {
     await client.query("BEGIN");
 
+    const completedAt = finish && completedSets.length > 0 ? "NOW()" : "NULL";
     const workoutResult = await client.query<{ id: string }>(
-      `INSERT INTO workouts (user_id, name, source, started_at, completed_at)
-       VALUES ($1, $2, 'jarvis', NOW(), NOW())
+      `INSERT INTO workouts (user_id, name, notes, source, started_at, completed_at)
+       VALUES ($1, $2, $3, 'jarvis', NOW(), ${completedAt})
        RETURNING id`,
-      [getFitnessUserId(), name]
+      [userId, name, notes]
     );
 
     const workoutId = workoutResult.rows[0]?.id;
@@ -132,31 +195,50 @@ export async function POST(req: NextRequest) {
       throw new Error("Kunne ikke opprette økt.");
     }
 
-    const values: unknown[] = [];
-    const placeholders: string[] = [];
-    let i = 1;
+    if (setsToStore.length > 0) {
+      const values: unknown[] = [];
+      const placeholders: string[] = [];
+      let i = 1;
 
-    for (const set of sets) {
-      placeholders.push(
-        `($${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++})`
-      );
-      values.push(
-        workoutId,
-        set.exerciseId,
-        set.setNumber,
-        set.weightKg,
-        set.reps,
-        set.setType,
-        true
+      for (const set of setsToStore) {
+        placeholders.push(
+          `($${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++})`
+        );
+        values.push(
+          workoutId,
+          set.exerciseId,
+          set.setNumber,
+          set.weightKg,
+          set.reps,
+          set.setType,
+          set.isCompleted
+        );
+      }
+
+      await client.query(
+        `INSERT INTO workout_sets
+           (workout_id, exercise_id, set_number, weight_kg, reps, set_type, is_completed)
+         VALUES ${placeholders.join(", ")}`,
+        values
       );
     }
 
-    await client.query(
-      `INSERT INTO workout_sets
-         (workout_id, exercise_id, set_number, weight_kg, reps, set_type, is_completed)
-       VALUES ${placeholders.join(", ")}`,
-      values
-    );
+    if (body.saveAsTemplate) {
+      let templateExercises = body.templateExercises ?? [];
+      if (templateExercises.length === 0) {
+        const byExercise = new Map<string, number>();
+        for (const set of allSets.length > 0 ? allSets : setsToStore) {
+          byExercise.set(
+            set.exerciseId,
+            Math.max(byExercise.get(set.exerciseId) ?? 0, set.setNumber)
+          );
+        }
+        templateExercises = [...byExercise.entries()].map(
+          ([exerciseId, setCount]) => ({ exerciseId, setCount: setCount || 1 })
+        );
+      }
+      await saveWorkoutTemplate(client, userId, name, notes, templateExercises);
+    }
 
     await client.query("COMMIT");
 

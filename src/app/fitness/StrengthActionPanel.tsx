@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Dumbbell, Plus } from "lucide-react";
+import { Dumbbell, Pencil, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -13,6 +13,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { LiveWorkoutLogger } from "./LiveWorkoutLogger";
+import { FastOktEditor } from "./FastOktEditor";
 
 interface StrengthActionPanelProps {
   onWorkoutSaved?: () => void;
@@ -20,6 +21,8 @@ interface StrengthActionPanelProps {
 
 export function StrengthActionPanel({ onWorkoutSaved }: StrengthActionPanelProps) {
   const [open, setOpen] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [templateVersion, setTemplateVersion] = useState(0);
 
   return (
     <div className="w-full space-y-3">
@@ -45,19 +48,37 @@ export function StrengthActionPanel({ onWorkoutSaved }: StrengthActionPanelProps
           >
             <SheetHeader className="shrink-0 border-b border-border px-4 py-3">
               <SheetTitle className="flex items-center gap-2 text-foreground">
-                <Dumbbell className="h-4 w-4 text-sky-400" />
+                <Dumbbell className="h-4 w-4 text-primary" />
                 Styrkeøkt
               </SheetTitle>
               <SheetDescription>
-                Logg sett underveis — lagres når du fullfører økten.
+                Planlegg hjemme eller logg sett underveis — lagres når du
+                lagrer plan eller fullfører økten.
               </SheetDescription>
             </SheetHeader>
             <LiveWorkoutLogger
+              templateVersion={templateVersion}
               onWorkoutSaved={onWorkoutSaved}
               onClose={() => setOpen(false)}
             />
           </SheetContent>
         </Sheet>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="h-9 w-full gap-2 text-xs font-medium"
+          onClick={() => setEditorOpen(true)}
+        >
+          <Pencil className="h-3.5 w-3.5" />
+          Rediger faste økter
+        </Button>
+
+        <FastOktEditor
+          open={editorOpen}
+          onOpenChange={setEditorOpen}
+          onChanged={() => setTemplateVersion((n) => n + 1)}
+        />
       </div>
     </div>
   );

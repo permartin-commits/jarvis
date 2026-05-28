@@ -7,6 +7,9 @@ import { cn } from "@/lib/utils";
 type Phase = "idle" | "countdown" | "running" | "form" | "saving";
 type GripCm = 1 | 2 | 3;
 
+const COUNTDOWN_FROM = -5;
+const STOP_ADJUST_SEC = 1;
+
 function formatDuration(s: number): string {
   const abs = Math.abs(s);
   const m = Math.floor(abs / 60);
@@ -46,12 +49,13 @@ export function BeastmakerTimer({ onSessionSaved }: { onSessionSaved?: () => voi
   }, [phase]);
 
   function handleStart() {
-    setElapsed(-2);
+    setElapsed(COUNTDOWN_FROM);
     setStartTime(null);
     setPhase("countdown");
   }
 
   function handleStop() {
+    setElapsed((s) => Math.max(0, s - STOP_ADJUST_SEC));
     setPhase("form");
   }
 
