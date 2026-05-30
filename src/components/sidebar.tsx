@@ -45,8 +45,8 @@ function SidebarBrand() {
             Dashboard
           </span>
           <div className="flex items-center gap-1 pt-0.5">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-palette-pink animate-pulse" />
-            <span className="text-[9px] text-palette-pink/80">Online</span>
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-[9px] text-emerald-400/90">Online</span>
           </div>
         </div>
     </div>

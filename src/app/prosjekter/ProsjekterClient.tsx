@@ -847,7 +847,7 @@ export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] 
       <div className="flex min-h-0 w-full flex-1 overflow-hidden">
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
           {/* Mobile — PIA øverst, som på Fitness */}
-          <div className="flex flex-col items-center gap-3 border-b border-border bg-sidebar/30 px-4 py-6 lg:hidden">
+          <div className="flex flex-col items-center gap-3 border-b border-border bg-background px-4 py-6 lg:hidden">
             <PiaCoreSection compact />
             <ProsjekterStartupRuns />
           </div>
@@ -1023,7 +1023,7 @@ export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] 
         </div>
 
         {/* Desktop — PIA høyre kolonne */}
-        <div className="hidden w-72 shrink-0 flex-col items-center gap-4 overflow-y-auto border-l border-border bg-sidebar/40 px-4 py-8 lg:flex xl:w-80">
+        <div className="hidden w-72 shrink-0 flex-col items-center gap-4 overflow-y-auto border-l border-border bg-background px-4 py-8 lg:flex xl:w-80">
           <PiaCoreSection compact />
           <ProsjekterStartupRuns />
         </div>

@@ -14,12 +14,19 @@ interface DayRow {
 export async function GET() {
   try {
     const [totals, daily] = await Promise.all([
-      query<{ ai_calls: string; ai_usd: string; pia_calls: string; pia_usd: string }>(
+      query<{
+        ai_calls: string;
+        ai_usd: string;
+        pia_calls: string;
+        pia_usd: string;
+        pia_tokens: string;
+      }>(
         `SELECT
            (SELECT COUNT(*)::text FROM ai_logger) AS ai_calls,
            (SELECT COALESCE(SUM(api_kostnad_usd), 0)::text FROM ai_logger) AS ai_usd,
            (SELECT COUNT(*)::text FROM pia_usage_log) AS pia_calls,
-           (SELECT COALESCE(SUM(kostnad_usd), 0)::text FROM pia_usage_log) AS pia_usd`
+           (SELECT COALESCE(SUM(kostnad_usd), 0)::text FROM pia_usage_log) AS pia_usd,
+           (SELECT COALESCE(SUM(total_tokens), 0)::text FROM pia_usage_log) AS pia_tokens`
       ),
       query<DayRow>(
         `WITH combined AS (
@@ -59,8 +66,12 @@ export async function GET() {
       })
       .reduce((s, d) => s + d.queries, 0);
 
+    const totalTokens = Number(t?.pia_tokens ?? 0);
+
     return NextResponse.json({
       totalCalls,
+      totalTokens,
+      totalTokensFmt: totalTokens.toLocaleString("nb-NO"),
       totalNok,
       totalNokFmt:
         totalNok.toLocaleString("nb-NO", {
@@ -75,6 +86,8 @@ export async function GET() {
     return NextResponse.json(
       {
         totalCalls: 0,
+        totalTokens: 0,
+        totalTokensFmt: "0",
         totalNok: 0,
         totalNokFmt: "0,00 kr",
         last30Queries: 0,

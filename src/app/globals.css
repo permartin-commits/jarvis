@@ -47,6 +47,53 @@
   --palette-pink: #da4167;
   --palette-white: #f0eff4;
 
+  /* Lys hovedflate — hvit med mørklilla tekst og accenter */
+  --background: #ffffff;
+  --foreground: var(--palette-violet);
+  --card: #ffffff;
+  --card-foreground: var(--palette-violet);
+  --popover: #ffffff;
+  --popover-foreground: var(--palette-violet);
+  --primary: var(--palette-raspberry);
+  --primary-foreground: #ffffff;
+  --secondary: color-mix(in srgb, var(--palette-violet) 7%, #ffffff);
+  --secondary-foreground: var(--palette-violet);
+  --muted: color-mix(in srgb, var(--palette-violet) 5%, #ffffff);
+  --muted-foreground: color-mix(in srgb, var(--palette-violet) 48%, #ffffff);
+  --accent: var(--palette-pink);
+  --accent-foreground: #ffffff;
+  --destructive: #c42d52;
+  --border: color-mix(in srgb, var(--palette-violet) 16%, #ffffff);
+  --input: color-mix(in srgb, var(--palette-violet) 6%, #ffffff);
+  --ring: var(--palette-raspberry);
+  --radius: 0.625rem;
+
+  /* Sidebar — uendret mørk lilla */
+  --sidebar: var(--palette-black);
+  --sidebar-foreground: color-mix(in srgb, var(--palette-white) 82%, var(--palette-violet));
+  --sidebar-accent: var(--palette-violet);
+  --sidebar-accent-foreground: var(--palette-white);
+  --sidebar-border: color-mix(in srgb, var(--palette-raspberry) 22%, var(--palette-violet));
+  --sidebar-ring: var(--palette-raspberry);
+}
+
+/* Hvit hovedinnhold (forside m.m.) */
+.home-surface,
+.main-surface {
+  --background: #ffffff;
+  --foreground: var(--palette-violet);
+  --card: #ffffff;
+  --card-foreground: var(--palette-violet);
+  --secondary: color-mix(in srgb, var(--palette-violet) 7%, #ffffff);
+  --muted: color-mix(in srgb, var(--palette-violet) 5%, #ffffff);
+  --muted-foreground: color-mix(in srgb, var(--palette-violet) 48%, #ffffff);
+  --border: color-mix(in srgb, var(--palette-violet) 14%, #ffffff);
+  background-color: #ffffff;
+  color: var(--palette-violet);
+}
+
+/* Mørk sone: orbit, chat og PIA — beholder lilla toner */
+.pia-dark-zone {
   --background: var(--palette-black);
   --foreground: var(--palette-white);
   --card: var(--palette-violet);
@@ -61,25 +108,28 @@
   --muted-foreground: color-mix(in srgb, var(--palette-white) 58%, var(--palette-violet));
   --accent: var(--palette-pink);
   --accent-foreground: var(--palette-white);
-  --destructive: #c42d52;
   --border: color-mix(in srgb, var(--palette-white) 14%, var(--palette-violet));
   --input: color-mix(in srgb, var(--palette-violet) 70%, var(--palette-black));
   --ring: var(--palette-pink);
-  --radius: 0.625rem;
-  --sidebar: var(--palette-black);
-  --sidebar-foreground: color-mix(in srgb, var(--palette-white) 82%, var(--palette-violet));
-  --sidebar-accent: var(--palette-violet);
-  --sidebar-accent-foreground: var(--palette-white);
-  --sidebar-border: color-mix(in srgb, var(--palette-raspberry) 22%, var(--palette-violet));
-  --sidebar-ring: var(--palette-raspberry);
-}
 
-.home-surface {
-  --background: color-mix(in srgb, var(--palette-black) 72%, var(--palette-violet));
-  --card: color-mix(in srgb, var(--palette-violet) 88%, var(--palette-black));
-  --secondary: color-mix(in srgb, var(--palette-violet) 65%, var(--palette-black));
-  --muted: color-mix(in srgb, var(--palette-violet) 50%, var(--palette-black));
-  background-color: var(--background);
+  color: var(--palette-white);
+  background-color: var(--palette-black);
+  background-image:
+    radial-gradient(
+      ellipse 90% 55% at 50% 0%,
+      color-mix(in srgb, var(--palette-raspberry) 32%, transparent),
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 70% 50% at 100% 100%,
+      color-mix(in srgb, var(--palette-pink) 16%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse 60% 70% at 0% 50%,
+      color-mix(in srgb, var(--palette-violet) 40%, transparent),
+      transparent 62%
+    );
 }
 
 @layer base {
@@ -88,25 +138,8 @@
     outline-color: color-mix(in srgb, var(--ring) 50%, transparent);
   }
   body {
-    color: var(--foreground);
-    background-color: var(--background);
-    background-image:
-      radial-gradient(
-        ellipse 85% 50% at 12% -8%,
-        color-mix(in srgb, var(--palette-raspberry) 28%, transparent),
-        transparent 58%
-      ),
-      radial-gradient(
-        ellipse 65% 45% at 100% 95%,
-        color-mix(in srgb, var(--palette-pink) 18%, transparent),
-        transparent 55%
-      ),
-      radial-gradient(
-        ellipse 55% 65% at 48% 42%,
-        color-mix(in srgb, var(--palette-violet) 35%, transparent),
-        transparent 62%
-      );
-    background-attachment: fixed;
+    background-color: #ffffff;
+    color: var(--palette-violet);
   }
 }
 
@@ -124,12 +157,20 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--palette-raspberry) 45%, var(--palette-violet));
+  background: color-mix(in srgb, var(--palette-violet) 25%, #ffffff);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--palette-pink) 55%, var(--palette-raspberry));
+  background: color-mix(in srgb, var(--palette-raspberry) 40%, #ffffff);
 }
 ::-webkit-scrollbar-corner {
   background: transparent;
+}
+
+/* Mørk scrollbar inne i PIA-sonen */
+.pia-dark-zone::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--palette-raspberry) 45%, var(--palette-violet));
+}
+.pia-dark-zone::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--palette-pink) 55%, var(--palette-raspberry));
 }

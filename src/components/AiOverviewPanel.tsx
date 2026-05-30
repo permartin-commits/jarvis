@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BrainCircuit, Loader2, MessageSquare, Coins } from "lucide-react";
+import { BrainCircuit, Loader2, MessageSquare, Coins, Hash } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -18,6 +18,8 @@ interface DailyPoint {
 
 interface AiStats {
   totalCalls: number;
+  totalTokens: number;
+  totalTokensFmt: string;
   totalNokFmt: string;
   last30Queries: number;
   daily: DailyPoint[];
@@ -138,14 +140,14 @@ export function AiOverviewPanel() {
   );
 
   return (
-    <Card className="w-full max-w-4xl border-border/80 bg-card/90 shadow-lg shadow-primary/5">
-      <CardHeader className="border-b border-border/60 pb-4">
+    <Card className="w-full max-w-4xl border-border bg-card text-card-foreground shadow-md ring-1 ring-border/80">
+      <CardHeader className="border-b border-border pb-4">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 ring-1 ring-primary/30">
             <BrainCircuit className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <CardTitle className="text-base font-semibold">
+            <CardTitle className="text-base font-semibold text-foreground">
               AI-analyser totalt
             </CardTitle>
             <CardDescription className="text-xs">
@@ -165,7 +167,7 @@ export function AiOverviewPanel() {
           <p className="py-6 text-center text-sm text-red-400">{loadError}</p>
         ) : stats ? (
           <>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <div className="rounded-xl border border-border/60 bg-secondary/25 px-4 py-3">
                 <div className="mb-2 flex items-center gap-2 text-muted-foreground">
                   <BrainCircuit className="h-3.5 w-3.5" />
@@ -189,14 +191,26 @@ export function AiOverviewPanel() {
                 </p>
                 <p className="text-[10px] text-muted-foreground">spørringer</p>
               </div>
-              <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
-                <div className="mb-2 flex items-center gap-2 text-primary/80">
+              <div className="rounded-xl border border-border/60 bg-secondary/25 px-4 py-3">
+                <div className="mb-2 flex items-center gap-2 text-muted-foreground">
+                  <Hash className="h-3.5 w-3.5" />
+                  <span className="text-[10px] font-medium uppercase tracking-wider">
+                    Tokens totalt
+                  </span>
+                </div>
+                <p className="text-2xl font-bold tabular-nums text-foreground">
+                  {stats.totalTokensFmt}
+                </p>
+                <p className="text-[10px] text-muted-foreground">pia_usage_log</p>
+              </div>
+              <div className="rounded-xl border border-border/60 bg-secondary/25 px-4 py-3">
+                <div className="mb-2 flex items-center gap-2 text-muted-foreground">
                   <Coins className="h-3.5 w-3.5" />
                   <span className="text-[10px] font-medium uppercase tracking-wider">
                     Estimert kostnad
                   </span>
                 </div>
-                <p className="text-2xl font-bold tabular-nums text-primary">
+                <p className="text-2xl font-bold tabular-nums text-foreground">
                   {stats.totalNokFmt}
                 </p>
               </div>

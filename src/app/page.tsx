@@ -26,14 +26,6 @@ export default function Home() {
 
       <main className="home-surface flex-1 overflow-y-auto pt-14 md:pt-0">
         <div className="relative min-h-full">
-          <div
-            className="pointer-events-none absolute inset-0 overflow-hidden"
-            aria-hidden
-          >
-            <div className="absolute left-1/2 top-0 h-[480px] w-[720px] -translate-x-1/2 rounded-full bg-primary/[0.07] blur-[100px]" />
-            <div className="absolute right-0 top-1/3 h-64 w-64 rounded-full bg-palette-pink/[0.06] blur-[80px]" />
-          </div>
-
           <div className="relative mx-auto flex max-w-4xl flex-col items-center gap-8 px-4 py-10 md:py-14 md:px-8">
             <PiaCoreSection greeting={timeOfDay} hero />
             <AiOverviewPanel />

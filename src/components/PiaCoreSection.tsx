@@ -170,6 +170,35 @@ function pickNorwegianVoice(): SpeechSynthesisVoice | null {
   return ranked[0]?.v ?? null;
 }
 
+/** Deler svar i korte biter med naturlige pauser — mindre «robot»-følelse. */
+function prepareSpeechChunks(text: string): string[] {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  if (!normalized) return [];
+
+  const sentences = normalized
+    .split(/(?<=[.!?…])\s+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const chunks: string[] = [];
+  for (const sentence of sentences) {
+    if (sentence.length > 140) {
+      const parts = sentence
+        .split(/(?<=[,;:])\s+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      chunks.push(...(parts.length > 1 ? parts : [sentence]));
+    } else {
+      chunks.push(sentence);
+    }
+  }
+  return chunks;
+}
+
+const SPEECH_RATE = 1.1;
+const SPEECH_PITCH = 0.98;
+const SPEECH_CHUNK_GAP_MS = 120;
+
 // ── Orb ───────────────────────────────────────────────────────────────────────
 
 function PiaOrb({
@@ -185,7 +214,7 @@ function PiaOrb({
   size?: number;
   hero?: boolean;
 }) {
-  const ringStroke = "var(--palette-white)";
+  const ringStroke = "var(--palette-violet)";
 
   return (
     <button
@@ -224,35 +253,17 @@ function PiaOrb({
         </>
       )}
 
-      {/* Ambient primary glow */}
+      {/* Glow kun rundt selve kula (liten radius) */}
       <div
-        className="absolute inset-0 rounded-full transition-opacity duration-500"
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-opacity duration-500"
         style={{
+          width: size * 0.52,
+          height: size * 0.52,
           background: isListening
-            ? "radial-gradient(circle, rgba(239,68,68,0.22) 0%, transparent 65%)"
-            : "radial-gradient(circle, var(--primary) 0%, transparent 65%)",
-          opacity: isListening ? 0.35 : hero ? 0.22 : 0.12,
-          filter: hero ? "blur(40px)" : "blur(30px)",
-        }}
-      />
-      {hero && !isListening && (
-        <span
-          className="absolute inset-0 rounded-full animate-ping"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(96,165,250,0.15) 0%, transparent 70%)",
-            animationDuration: "3s",
-          }}
-        />
-      )}
-      {/* Ambient navy glow */}
-      <div
-        className="absolute inset-0 rounded-full"
-        style={{
-          background:
-            "radial-gradient(circle at 60% 65%, #1e3a8a 0%, transparent 60%)",
-          opacity: 0.22,
-          filter: "blur(28px)",
+            ? "radial-gradient(circle, rgba(239,68,68,0.35) 0%, transparent 72%)"
+            : "radial-gradient(circle, var(--palette-raspberry) 0%, transparent 72%)",
+          opacity: isListening ? 0.5 : 0.45,
+          filter: "blur(18px)",
         }}
       />
 
@@ -268,15 +279,22 @@ function PiaOrb({
             <stop
               offset="0%"
               style={{
-                stopColor: isListening ? "#ef4444" : hero ? "#60a5fa" : "var(--primary)",
-                stopOpacity: hero ? 0.65 : 0.55,
+                stopColor: isListening ? "#ef4444" : "var(--palette-raspberry)",
+                stopOpacity: hero ? 0.85 : 0.75,
+              }}
+            />
+            <stop
+              offset="55%"
+              style={{
+                stopColor: isListening ? "#b91c1c" : "var(--palette-violet)",
+                stopOpacity: 0.9,
               }}
             />
             <stop
               offset="100%"
               style={{
-                stopColor: isListening ? "#ef4444" : "var(--primary)",
-                stopOpacity: 0.04,
+                stopColor: isListening ? "#7f1d1d" : "var(--palette-violet)",
+                stopOpacity: 1,
               }}
             />
           </radialGradient>
@@ -373,17 +391,6 @@ function PiaOrb({
 
         {/* Core fill */}
         <circle cx="100" cy="100" r="47" fill="url(#orbFill)" filter="url(#coreBloom)" />
-        {hero && !isListening && (
-          <circle
-            cx="100"
-            cy="100"
-            r="52"
-            stroke={ringStroke}
-            strokeWidth="0.5"
-            opacity="0.35"
-            className="animate-pulse"
-          />
-        )}
       </svg>
 
       {/* Centre icon — mic when listening, bolt otherwise */}
@@ -396,9 +403,9 @@ function PiaOrb({
           />
         ) : (
           <Zap
-            style={{ width: 28, height: 28, color: "#0f172a" }}
+            style={{ width: 28, height: 28, color: "var(--palette-white)" }}
             strokeWidth={2.5}
-            fill="#0f172a"
+            fill="var(--palette-white)"
           />
         )}
       </div>
@@ -476,26 +483,44 @@ export function PiaCoreSection({
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
 
-    const clean = stripMarkdown(text);
-    if (!clean) return;
+    const chunks = prepareSpeechChunks(stripMarkdown(text));
+    if (chunks.length === 0) return;
 
     const fire = () => {
-      const utterance = new SpeechSynthesisUtterance(clean);
-      utterance.lang  = "nb-NO";
-      utterance.rate  = 2.0;
-      utterance.pitch = 1;
-
       const voice = pickNorwegianVoice();
-      if (voice) utterance.voice = voice;
+      let index = 0;
 
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend   = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
+      const speakNext = () => {
+        if (index >= chunks.length) {
+          setIsSpeaking(false);
+          return;
+        }
 
-      window.speechSynthesis.speak(utterance);
+        const utterance = new SpeechSynthesisUtterance(chunks[index]);
+        utterance.lang = "nb-NO";
+        utterance.rate = SPEECH_RATE;
+        utterance.pitch = SPEECH_PITCH;
+        if (voice) utterance.voice = voice;
+
+        utterance.onstart = () => {
+          if (index === 0) setIsSpeaking(true);
+        };
+        utterance.onend = () => {
+          index += 1;
+          if (index < chunks.length) {
+            window.setTimeout(speakNext, SPEECH_CHUNK_GAP_MS);
+          } else {
+            setIsSpeaking(false);
+          }
+        };
+        utterance.onerror = () => setIsSpeaking(false);
+
+        window.speechSynthesis.speak(utterance);
+      };
+
+      speakNext();
     };
 
-    // Voices may not be loaded yet on first call — wait for them
     const voices = window.speechSynthesis.getVoices();
     if (voices.length > 0) {
       fire();
@@ -543,7 +568,6 @@ export function PiaCoreSection({
     // Snapshot the text that was in the input before we started speaking,
     // so interim results are appended rather than replacing existing text.
     const prefix = input.trimEnd();
-    let sessionFinals = "";
 
     recognition.onstart = () => {
       setIsListening(true);
@@ -551,18 +575,15 @@ export function PiaCoreSection({
     };
 
     recognition.onresult = (event: SRResultEvent) => {
-      let interim = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const t = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          sessionFinals += t;
-        } else {
-          interim = t;
-        }
+      // Bygg hele transkripsjonen fra scratch hver gang — unngår trippel
+      // tekst på mobil der resultIndex ofte er 0 på hvert kall.
+      let transcript = "";
+      for (let i = 0; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
       }
-      const combined = [prefix, sessionFinals + interim]
+      const combined = [prefix, transcript.trim()]
         .filter(Boolean)
-        .join(" ");
+        .join(prefix ? " " : "");
       setInput(combined);
     };
 
@@ -633,7 +654,12 @@ export function PiaCoreSection({
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <>
+    <div
+      className={cn(
+        "flex w-full flex-col items-center gap-6 overflow-hidden rounded-2xl bg-white",
+        compact ? "gap-4 px-4 py-5" : hero ? "px-8 py-10" : "px-6 py-8"
+      )}
+    >
       {/* ── Orb ──────────────────────────────────────────────────── */}
       <PiaOrb
         isListening={isListening}
@@ -655,7 +681,7 @@ export function PiaCoreSection({
           PIA
         </h2>
         {!compact && (
-          <p className="text-[10px] tracking-[0.35em] uppercase text-muted-foreground/60">
+          <p className="text-[10px] tracking-[0.35em] uppercase text-muted-foreground">
             Master OS
           </p>
         )}
@@ -663,7 +689,7 @@ export function PiaCoreSection({
 
       {/* ── Greeting (full mode only) ─────────────────────────────── */}
       {!compact && (
-        <p className="text-base font-medium text-foreground/75 text-center">
+        <p className="text-base font-medium text-foreground text-center">
           {greeting} Per Martin, hva vil du gjøre i dag?
         </p>
       )}
@@ -840,13 +866,13 @@ export function PiaCoreSection({
 
         {/* Footer hint (full mode only) */}
         {!compact && !hasMessages && (
-          <p className="text-center text-[10px] text-muted-foreground/50">
+          <p className="text-center text-[10px] text-muted-foreground">
             {isListening
               ? "Snakker nå — klikk på orben eller mikrofon-ikonet for å stoppe"
               : `Klikk på orben for å snakke · Enter for å sende · Stemme ${voiceEnabled ? "på" : "av"}`}
           </p>
         )}
       </div>
-    </>
+    </div>
   );
 }

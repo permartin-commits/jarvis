@@ -49,7 +49,7 @@ export default async function PortefoljePage() {
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background pt-14 md:pt-0">
         <div className="flex h-full overflow-hidden">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
-            <div className="flex flex-col items-center gap-3 border-b border-border bg-sidebar/30 px-4 py-6 lg:hidden">
+            <div className="flex flex-col items-center gap-3 border-b border-border bg-background px-4 py-6 lg:hidden">
               <PiaCoreSection compact />
               <DagsrapporterPanel />
             </div>
@@ -119,7 +119,7 @@ export default async function PortefoljePage() {
             </div>
           </div>
 
-          <div className="hidden w-72 shrink-0 flex-col items-center gap-4 overflow-y-auto border-l border-border bg-sidebar/40 px-4 py-8 lg:flex xl:w-80">
+          <div className="hidden w-72 shrink-0 flex-col items-center gap-4 overflow-y-auto border-l border-border bg-background px-4 py-8 lg:flex xl:w-80">
             <PiaCoreSection compact />
             <DagsrapporterPanel />
           </div>
