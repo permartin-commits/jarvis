@@ -130,44 +130,77 @@ function stripMarkdown(text: string): string {
     .trim();
 }
 
-// Pick the best available calm female Norwegian voice.
-// Scoring:  5 = Microsoft Nora Natural (best — calm, female, online)
-//           4 = any "Natural" nb/no voice with a female name
-//           3 = Google Norsk (female by default)
-//           2 = Nora / Astrid / Ingrid / Hulda (known female names)
-//           1 = any other nb/no voice
-//           -1 = skip (wrong language or known male name)
-const FEMALE_NAMES = ["nora", "astrid", "ingrid", "hulda", "marit", "kari"];
-const MALE_NAMES   = ["rasmus", "vetle", "mikkel", "olav", "christian"];
+const VOICE_PRIORITY_KEYWORDS = ["google", "natural", "premium"] as const;
 
-function pickNorwegianVoice(): SpeechSynthesisVoice | null {
-  if (typeof window === "undefined" || !window.speechSynthesis) return null;
-  const voices = window.speechSynthesis.getVoices();
+let cachedNorwegianVoice: SpeechSynthesisVoice | null = null;
 
-  const score = (v: SpeechSynthesisVoice): number => {
-    const name = v.name.toLowerCase();
-    const lang = v.lang.toLowerCase();
-    if (!lang.startsWith("nb") && !lang.startsWith("no")) return -1;
-    if (MALE_NAMES.some((m) => name.includes(m))) return -1;
+function isNorwegianVoice(v: SpeechSynthesisVoice): boolean {
+  const lang = v.lang.toLowerCase();
+  return lang.startsWith("nb") || lang.startsWith("no");
+}
 
-    // Microsoft Nora Natural — top pick
-    if (name.includes("nora") && name.includes("natural")) return 5;
-    // Any Natural nb/no voice with a female name
-    if (name.includes("natural") && FEMALE_NAMES.some((f) => name.includes(f))) return 4;
-    // Google Norsk
-    if (name.includes("google") && (name.includes("no") || name.includes("norsk"))) return 3;
-    // Known female names
-    if (FEMALE_NAMES.some((f) => name.includes(f))) return 2;
-    // Any remaining nb/no
-    return 1;
-  };
+/** Høyere score = bedre. Prioriterer Google / Natural / Premium, deretter annen nb-NO. */
+function scoreNorwegianVoice(v: SpeechSynthesisVoice): number {
+  if (!isNorwegianVoice(v)) return -1;
 
+  const name = v.name.toLowerCase();
+  let score = 0;
+
+  for (const keyword of VOICE_PRIORITY_KEYWORDS) {
+    if (name.includes(keyword)) score += 10;
+  }
+
+  if (name.includes("google") && (name.includes("norsk") || name.includes(" nor"))) {
+    score += 5;
+  }
+
+  // Premium/natural uten keyword-match (sjelden): fortsatt norsk fallback
+  return score > 0 ? score : 1;
+}
+
+function pickNorwegianVoiceFromList(
+  voices: SpeechSynthesisVoice[]
+): SpeechSynthesisVoice | null {
   const ranked = voices
-    .map((v) => ({ v, s: score(v) }))
+    .map((v) => ({ v, s: scoreNorwegianVoice(v) }))
     .filter(({ s }) => s > 0)
     .sort((a, b) => b.s - a.s);
 
   return ranked[0]?.v ?? null;
+}
+
+function refreshNorwegianVoiceCache(): SpeechSynthesisVoice | null {
+  if (typeof window === "undefined" || !window.speechSynthesis) {
+    cachedNorwegianVoice = null;
+    return null;
+  }
+  cachedNorwegianVoice = pickNorwegianVoiceFromList(
+    window.speechSynthesis.getVoices()
+  );
+  return cachedNorwegianVoice;
+}
+
+function getNorwegianVoice(): SpeechSynthesisVoice | null {
+  if (cachedNorwegianVoice) return cachedNorwegianVoice;
+  return refreshNorwegianVoiceCache();
+}
+
+function waitForVoicesThen(run: () => void): void {
+  if (typeof window === "undefined" || !window.speechSynthesis) return;
+
+  const start = () => {
+    refreshNorwegianVoiceCache();
+    run();
+  };
+
+  if (window.speechSynthesis.getVoices().length > 0) {
+    start();
+    return;
+  }
+
+  window.speechSynthesis.addEventListener("voiceschanged", start, {
+    once: true,
+  });
 }
 
 /** Deler svar i korte biter med naturlige pauser — mindre «robot»-følelse. */
@@ -477,6 +510,23 @@ export function PiaCoreSection({
     };
   }, []);
 
+  // ── Last inn TTS-stemmer tidlig (Google / Natural / Premium) ─────────────
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+
+    const onVoicesChanged = () => refreshNorwegianVoiceCache();
+
+    onVoicesChanged();
+    window.speechSynthesis.addEventListener("voiceschanged", onVoicesChanged);
+    return () => {
+      window.speechSynthesis.removeEventListener(
+        "voiceschanged",
+        onVoicesChanged
+      );
+    };
+  }, []);
+
   // ── Text-to-Speech ────────────────────────────────────────────────────────
 
   const speak = useCallback((text: string) => {
@@ -487,7 +537,7 @@ export function PiaCoreSection({
     if (chunks.length === 0) return;
 
     const fire = () => {
-      const voice = pickNorwegianVoice();
+      const voice = getNorwegianVoice();
       let index = 0;
 
       const speakNext = () => {
@@ -521,12 +571,7 @@ export function PiaCoreSection({
       speakNext();
     };
 
-    const voices = window.speechSynthesis.getVoices();
-    if (voices.length > 0) {
-      fire();
-    } else {
-      window.speechSynthesis.addEventListener("voiceschanged", fire, { once: true });
-    }
+    waitForVoicesThen(fire);
   }, []);
 
   const toggleVoice = useCallback(() => {
@@ -575,15 +620,26 @@ export function PiaCoreSection({
     };
 
     recognition.onresult = (event: SRResultEvent) => {
-      // Bygg hele transkripsjonen fra scratch hver gang — unngår trippel
-      // tekst på mobil der resultIndex ofte er 0 på hvert kall.
-      let transcript = "";
+      let finalTranscript = "";
+      let interimTranscript = "";
+
       for (let i = 0; i < event.results.length; i++) {
-        transcript += event.results[i][0].transcript;
+        const result = event.results[i];
+        const piece = result[0]?.transcript ?? "";
+        if (result.isFinal) {
+          finalTranscript += piece;
+        } else {
+          interimTranscript += piece;
+        }
       }
-      const combined = [prefix, transcript.trim()]
-        .filter(Boolean)
-        .join(prefix ? " " : "");
+
+      // Kun final er permanent; interim erstattes hver onresult (ikke akkumulert)
+      const sessionText = (finalTranscript + interimTranscript).trim();
+      const combined = prefix
+        ? sessionText
+          ? `${prefix} ${sessionText}`
+          : prefix
+        : sessionText;
       setInput(combined);
     };
 
