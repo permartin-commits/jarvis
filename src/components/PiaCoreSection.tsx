@@ -228,8 +228,8 @@ function prepareSpeechChunks(text: string): string[] {
   return chunks;
 }
 
-const SPEECH_RATE = 1.1;
-const SPEECH_PITCH = 0.98;
+const SPEECH_RATE = 1.25;
+const SPEECH_PITCH = 0.95;
 const SPEECH_CHUNK_GAP_MS = 120;
 
 // ── Orb ───────────────────────────────────────────────────────────────────────

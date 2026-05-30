@@ -64,7 +64,7 @@ export function ClimbingSendsBarChart({ routes }: ClimbingSendsBarChartProps) {
                       className="group flex h-full min-w-[2rem] flex-1 flex-col items-center justify-end sm:min-w-0"
                       title={`${d.grad}: ${d.count} send${d.count === 1 ? "" : "t"}`}
                     >
-                      <span className="mb-1 text-[9px] font-medium tabular-nums text-foreground/80 opacity-0 transition-opacity group-hover:opacity-100">
+                      <span className="mb-1 text-[9px] font-medium tabular-nums text-foreground/80 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
                         {d.count}
                       </span>
                       <div

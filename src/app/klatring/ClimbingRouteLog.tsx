@@ -13,11 +13,18 @@ import { ClimbingRouteDetailModal } from "./ClimbingRouteDetailModal";
 const PREVIEW_COUNT = 8;
 const ALL_CRAG = "Alle";
 
-const cragSelectClass =
-  "h-8 min-w-[9rem] max-w-[12rem] rounded-lg border border-border bg-secondary/30 px-2.5 text-xs text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+const filterSelectClass =
+  "h-8 w-full min-w-0 rounded-lg border border-border bg-secondary/30 px-2.5 text-xs text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-auto sm:min-w-[9rem] sm:max-w-[12rem]";
 
 type SortCol = "crag" | "rutenavn" | "grad" | "dato_send";
 type SortDir = "asc" | "desc";
+
+const SORT_LABELS: Record<SortCol, string> = {
+  crag: "Crag",
+  rutenavn: "Rutenavn",
+  grad: "Grad",
+  dato_send: "Send-dato",
+};
 
 function loadRoutes(): Promise<ClimbingRoute[]> {
   return fetch("/api/climbing-routes")
@@ -34,6 +41,58 @@ function formatSendDate(iso: string | null): string {
     month: "short",
     year: "numeric",
   });
+}
+
+function RouteRowMobile({
+  route: r,
+  onSelect,
+}: {
+  route: ClimbingRoute;
+  onSelect: () => void;
+}) {
+  const status = routeStatus(r);
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className="block w-full px-4 py-3.5 text-left transition-colors hover:bg-secondary/20 focus-visible:bg-secondary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset md:hidden"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {r.crag}
+          </p>
+          <p className="mt-1 text-sm font-medium leading-snug text-foreground break-words">
+            {r.rutenavn}
+          </p>
+        </div>
+        <Badge
+          variant={status === "prosjekt" ? "outline" : "secondary"}
+          className={cn(
+            "h-5 shrink-0 px-1.5 text-[9px]",
+            status === "prosjekt" && "border-primary/30 text-primary"
+          )}
+        >
+          {status === "prosjekt" ? "Prosjekt" : "Send"}
+        </Badge>
+      </div>
+      <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+        <span className="font-semibold tabular-nums text-primary">{r.grad}</span>
+        <StarRating count={r.stjerner} />
+        <span className="tabular-nums text-muted-foreground">
+          {formatSendDate(r.dato_send)}
+        </span>
+        {r.flash && r.dato_send && (
+          <Zap className="h-3 w-3 text-amber-400" aria-label="Flash" />
+        )}
+      </div>
+      {r.kommentar && (
+        <p className="mt-2 line-clamp-2 text-[11px] leading-snug text-muted-foreground/80">
+          {r.kommentar}
+        </p>
+      )}
+    </button>
+  );
 }
 
 function StarRating({ count }: { count: number }) {
@@ -140,14 +199,14 @@ export function ClimbingRouteLog({ refreshKey = 0 }: { refreshKey?: number }) {
       <div className="border-t border-border p-4">
         <Card className="overflow-hidden border-border bg-card">
           <CardHeader className="border-b border-border px-4 pb-3 pt-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
               <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Alle ruter
               </CardTitle>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-[auto_1fr_auto] sm:items-center">
                 <label
                   htmlFor="crag-filter"
-                  className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground"
+                  className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground sm:sr-only"
                 >
                   Crag
                 </label>
@@ -158,21 +217,63 @@ export function ClimbingRouteLog({ refreshKey = 0 }: { refreshKey?: number }) {
                     setCragFilter(e.target.value);
                     setShowAll(false);
                   }}
-                  className={cragSelectClass}
+                  className={filterSelectClass}
+                  aria-label="Filtrer på crag"
                 >
-                  <option value={ALL_CRAG}>Alle</option>
+                  <option value={ALL_CRAG}>Alle crag</option>
                   {cragOptions.map((c) => (
                     <option key={c} value={c}>
                       {c}
                     </option>
                   ))}
                 </select>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-muted-foreground sm:whitespace-nowrap">
                   {filteredRoutes.length}
                   {cragFilter !== ALL_CRAG ? ` / ${routes.length}` : ""} ruter
                 </span>
               </div>
             </div>
+            {routes.length > 0 && (
+              <div className="mt-3 flex flex-col gap-2 border-t border-border/60 pt-3 md:hidden">
+                <label
+                  htmlFor="route-sort"
+                  className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground"
+                >
+                  Sorter etter
+                </label>
+                <div className="flex gap-2">
+                  <select
+                    id="route-sort"
+                    value={sortCol}
+                    onChange={(e) => {
+                      setSortCol(e.target.value as SortCol);
+                      setShowAll(false);
+                    }}
+                    className={filterSelectClass}
+                  >
+                    {(Object.keys(SORT_LABELS) as SortCol[]).map((col) => (
+                      <option key={col} value={col}>
+                        {SORT_LABELS[col]}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+                    className="flex h-8 shrink-0 items-center gap-1 rounded-lg border border-border bg-secondary/30 px-3 text-xs font-medium text-foreground"
+                    aria-label={
+                      sortDir === "asc" ? "Stigende rekkefølge" : "Synkende rekkefølge"
+                    }
+                  >
+                    {sortDir === "asc" ? (
+                      <ChevronUp className="h-3.5 w-3.5" />
+                    ) : (
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
           </CardHeader>
 
           <CardContent className="p-0">
@@ -186,88 +287,105 @@ export function ClimbingRouteLog({ refreshKey = 0 }: { refreshKey?: number }) {
               </p>
             ) : (
               <>
-                <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_3rem_2.5rem_4.5rem_3rem] gap-2 border-b border-border/60 bg-secondary/20 px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                  <button
-                    type="button"
-                    onClick={() => toggleSort("crag")}
-                    className="flex items-center gap-1 text-left hover:text-foreground"
-                  >
-                    Crag <SortIcon col="crag" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => toggleSort("rutenavn")}
-                    className="flex items-center gap-1 text-left hover:text-foreground"
-                  >
-                    Rute <SortIcon col="rutenavn" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => toggleSort("grad")}
-                    className="flex items-center gap-1 hover:text-foreground"
-                  >
-                    Grad <SortIcon col="grad" />
-                  </button>
-                  <span className="text-center">★</span>
-                  <button
-                    type="button"
-                    onClick={() => toggleSort("dato_send")}
-                    className="flex items-center justify-end gap-1 hover:text-foreground"
-                  >
-                    Send <SortIcon col="dato_send" />
-                  </button>
-                  <span className="text-right">Status</span>
+                {/* Mobil: kort per rute */}
+                <div className="divide-y divide-border/60 md:hidden">
+                  {visibleRows.map((r) => (
+                    <RouteRowMobile
+                      key={r.id}
+                      route={r}
+                      onSelect={() => setSelectedId(r.id)}
+                    />
+                  ))}
                 </div>
 
-                <div className="divide-y divide-border/60">
-                  {visibleRows.map((r) => {
-                    const status = routeStatus(r);
-                    return (
-                      <button
-                        key={r.id}
-                        type="button"
-                        onClick={() => setSelectedId(r.id)}
-                        className="grid w-full grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_3rem_2.5rem_4.5rem_3rem] gap-2 px-4 py-3 text-left transition-colors hover:bg-secondary/20 focus-visible:bg-secondary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset"
-                      >
-                        <span className="truncate text-xs font-semibold text-foreground">
-                          {r.crag}
-                        </span>
-                        <div className="min-w-0">
-                          <p className="truncate text-xs text-foreground">
-                            {r.rutenavn}
-                          </p>
-                          {r.kommentar && (
-                            <p className="mt-0.5 truncate text-[10px] text-muted-foreground/70">
-                              {r.kommentar}
+                {/* Desktop: tabell */}
+                <div className="hidden md:block">
+                  <div className="grid grid-cols-[minmax(7rem,1fr)_minmax(8rem,1.4fr)_3.5rem_2.75rem_5.5rem_3.5rem] gap-3 border-b border-border/60 bg-secondary/20 px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                    <button
+                      type="button"
+                      onClick={() => toggleSort("crag")}
+                      className="flex items-center gap-1 text-left hover:text-foreground"
+                    >
+                      Crag <SortIcon col="crag" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleSort("rutenavn")}
+                      className="flex items-center gap-1 text-left hover:text-foreground"
+                    >
+                      Rute <SortIcon col="rutenavn" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleSort("grad")}
+                      className="flex items-center gap-1 hover:text-foreground"
+                    >
+                      Grad <SortIcon col="grad" />
+                    </button>
+                    <span className="text-center">★</span>
+                    <button
+                      type="button"
+                      onClick={() => toggleSort("dato_send")}
+                      className="flex items-center justify-end gap-1 hover:text-foreground"
+                    >
+                      Send <SortIcon col="dato_send" />
+                    </button>
+                    <span className="text-right">Status</span>
+                  </div>
+
+                  <div className="divide-y divide-border/60">
+                    {visibleRows.map((r) => {
+                      const status = routeStatus(r);
+                      return (
+                        <button
+                          key={r.id}
+                          type="button"
+                          onClick={() => setSelectedId(r.id)}
+                          className="grid w-full grid-cols-[minmax(7rem,1fr)_minmax(8rem,1.4fr)_3.5rem_2.75rem_5.5rem_3.5rem] gap-3 px-4 py-3 text-left transition-colors hover:bg-secondary/20 focus-visible:bg-secondary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset"
+                        >
+                          <span className="truncate text-xs font-semibold text-foreground">
+                            {r.crag}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="truncate text-xs text-foreground">
+                              {r.rutenavn}
                             </p>
-                          )}
-                        </div>
-                        <span className="text-xs font-medium tabular-nums text-primary">
-                          {r.grad}
-                        </span>
-                        <span className="flex justify-center">
-                          <StarRating count={r.stjerner} />
-                        </span>
-                        <span className="text-right text-xs tabular-nums text-foreground">
-                          {formatSendDate(r.dato_send)}
-                          {r.flash && r.dato_send && (
-                            <Zap className="ml-0.5 inline h-3 w-3 text-amber-400" />
-                          )}
-                        </span>
-                        <div className="flex justify-end">
-                          <Badge
-                            variant={status === "prosjekt" ? "outline" : "secondary"}
-                            className={cn(
-                              "h-5 px-1.5 text-[9px]",
-                              status === "prosjekt" && "border-primary/30 text-primary"
+                            {r.kommentar && (
+                              <p className="mt-0.5 truncate text-[10px] text-muted-foreground/70">
+                                {r.kommentar}
+                              </p>
                             )}
-                          >
-                            {status === "prosjekt" ? "Prosjekt" : "Send"}
-                          </Badge>
-                        </div>
-                      </button>
-                    );
-                  })}
+                          </div>
+                          <span className="text-xs font-medium tabular-nums text-primary">
+                            {r.grad}
+                          </span>
+                          <span className="flex justify-center">
+                            <StarRating count={r.stjerner} />
+                          </span>
+                          <span className="text-right text-xs tabular-nums text-foreground">
+                            {formatSendDate(r.dato_send)}
+                            {r.flash && r.dato_send && (
+                              <Zap className="ml-0.5 inline h-3 w-3 text-amber-400" />
+                            )}
+                          </span>
+                          <div className="flex justify-end">
+                            <Badge
+                              variant={
+                                status === "prosjekt" ? "outline" : "secondary"
+                              }
+                              className={cn(
+                                "h-5 px-1.5 text-[9px]",
+                                status === "prosjekt" &&
+                                  "border-primary/30 text-primary"
+                              )}
+                            >
+                              {status === "prosjekt" ? "Prosjekt" : "Send"}
+                            </Badge>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {hasMore && (
