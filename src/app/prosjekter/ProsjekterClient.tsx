@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Tag, Pencil, X, ChevronDown, BrainCircuit, Plus, LayoutGrid, Table2, Check, ChevronsUpDown, ChevronUp } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { PiaCoreSection } from "@/components/PiaCoreSection";
 import {
@@ -81,6 +82,22 @@ const statusConfig: Record<
 const DB_STATUSES = ["I gang", "Planlagt", "Ferdig", "På vent", "Visjon", "Endgame"];
 
 const MASTERPLAN_POLL_MS = 30_000;
+
+const STATUS_FILTER_OPTIONS: MappedStatus[] = [
+  "aktiv",
+  "pause",
+  "idé",
+  "fullført",
+  "visjon",
+];
+
+const DEFAULT_STATUS_FILTERS: Record<MappedStatus, boolean> = {
+  aktiv: true,
+  pause: true,
+  idé: true,
+  fullført: true,
+  visjon: true,
+};
 
 // ── Shared styles ──────────────────────────────────────────────────────────────
 
@@ -441,7 +458,6 @@ function TableRow({
   const [fase,      setFase]      = useState(p.fase      ?? "");
   const [status,    setStatus]    = useState(p.status    ?? "");
   const [kategori,  setKategori]  = useState(p.kategori  ?? "");
-  const [prioritet, setPrioritet] = useState(p.prioritet ?? "");
   const [saving,    setSaving]    = useState(false);
   // tracks which text fields are expanded beyond 200 chars
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -502,7 +518,7 @@ function TableRow({
       const res = await fetch(`/api/masterplan/${p.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ oppgave, fase, status, kategori, prioritet }),
+        body: JSON.stringify({ oppgave, fase, status, kategori }),
       });
       if (!res.ok) throw new Error("Lagring feilet");
       const updated: MasterplanRow = await res.json();
@@ -521,7 +537,6 @@ function TableRow({
     setFase     (p.fase      ?? "");
     setStatus   (p.status    ?? "");
     setKategori (p.kategori  ?? "");
-    setPrioritet(p.prioritet ?? "");
     setEditing(false);
   }
 
@@ -547,21 +562,30 @@ function TableRow({
       {/* ID */}
       <td className={cn(cellCls, "text-xs text-muted-foreground w-10 align-middle")}>{p.id}</td>
 
-      {/* Oppgave */}
-      <td className={cn(cellCls, "min-w-0 w-[26%]")}>
-        {editing ? (
-          <input value={oppgave} onChange={(e) => setOppgave(e.target.value)} className={inlineCls} />
-        ) : (
-          <TruncatedText field="oppgave" value={p.oppgave} className="text-sm font-medium text-foreground" />
-        )}
-      </td>
-
       {/* Fase */}
       <td className={cn(cellCls, "min-w-0 w-[12%]")}>
         {editing ? (
           <input value={fase} onChange={(e) => setFase(e.target.value)} className={inlineCls} />
         ) : (
-          <TruncatedText field="fase" value={p.fase} className="text-xs text-muted-foreground" />
+          <TruncatedText field="fase" value={p.fase} className="text-sm font-semibold text-foreground" />
+        )}
+      </td>
+
+      {/* Heading (oppgave) */}
+      <td className={cn(cellCls, "min-w-0 w-[22%]")}>
+        {editing ? (
+          <input value={oppgave} onChange={(e) => setOppgave(e.target.value)} className={inlineCls} />
+        ) : (
+          <TruncatedText field="oppgave" value={p.oppgave} className="text-sm font-normal text-foreground" />
+        )}
+      </td>
+
+      {/* Beskrivelse (kategori) */}
+      <td className={cn(cellCls, "min-w-0 w-[38%]")}>
+        {editing ? (
+          <input value={kategori} onChange={(e) => setKategori(e.target.value)} className={inlineCls} />
+        ) : (
+          <TruncatedText field="kategori" value={p.kategori} className="text-sm text-foreground" />
         )}
       </td>
 
@@ -576,25 +600,6 @@ function TableRow({
             <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", cfg.dot)} />
             {cfg.label}
           </span>
-        )}
-      </td>
-
-      {/* Kategori */}
-      <td className={cn(cellCls, "min-w-0 w-[23%]")}>
-        {editing ? (
-          <input value={kategori} onChange={(e) => setKategori(e.target.value)} className={inlineCls} />
-        ) : (
-          <TruncatedText field="kategori" value={p.kategori} className="text-xs text-muted-foreground" />
-        )}
-      </td>
-
-      {/* Prioritet */}
-      <td className={cn(cellCls, "w-[9%] min-w-[5rem]")}>
-        {editing ? (
-          <input value={prioritet} onChange={(e) => setPrioritet(e.target.value)}
-            placeholder="f.eks. Høy" className={inlineCls} />
-        ) : (
-          <TruncatedText field="prioritet" value={p.prioritet} className="text-xs text-muted-foreground" />
         )}
       </td>
 
@@ -634,7 +639,7 @@ function TableRow({
   );
 }
 
-type SortKey = "id" | "oppgave" | "fase" | "status" | "kategori" | "prioritet";
+type SortKey = "id" | "oppgave" | "fase" | "status" | "kategori";
 type SortDir = "asc" | "desc";
 
 function TableView({
@@ -678,12 +683,11 @@ function TableView({
   }
 
   const cols: { key: SortKey; label: string }[] = [
-    { key: "id",        label: "#" },
-    { key: "oppgave",   label: "Oppgave" },
-    { key: "fase",      label: "Fase" },
-    { key: "status",    label: "Status" },
-    { key: "kategori",  label: "Kategori" },
-    { key: "prioritet", label: "Prioritet" },
+    { key: "id",       label: "#" },
+    { key: "fase",     label: "Fase" },
+    { key: "oppgave",  label: "Heading" },
+    { key: "kategori", label: "Beskrivelse" },
+    { key: "status",   label: "Status" },
   ];
 
   return (
@@ -692,11 +696,10 @@ function TableView({
         <table className="w-full min-w-0 table-fixed border-collapse text-left">
           <colgroup>
             <col className="w-9" />
-            <col className="w-[26%]" />
             <col className="w-[12%]" />
+            <col className="w-[22%]" />
+            <col className="w-[38%]" />
             <col className="w-[11%]" />
-            <col className="w-[23%]" />
-            <col className="w-[9%]" />
             <col className="w-[5.5rem]" />
           </colgroup>
           <thead>
@@ -735,8 +738,9 @@ function TableView({
 
 export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] }) {
   const [rows, setRows]           = useState<MasterplanRow[]>(initialRows);
-  const [faseFilter, setFase]     = useState<string>("alle");
-  const [statusFilter, setStatus] = useState<string>("alle");
+  const [faseFilter, setFase] = useState<string>("alle");
+  const [statusFilters, setStatusFilters] =
+    useState<Record<MappedStatus, boolean>>(DEFAULT_STATUS_FILTERS);
   const [editing, setEditing]     = useState<MasterplanRow | null>(null);
   const [creating, setCreating]   = useState(false);
   const [startingIds, setStartingIds] = useState<Set<number>>(new Set());
@@ -827,12 +831,11 @@ export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] 
 
   const visible = useMemo(() => {
     return projects.filter((p) => {
-      const faseOk   = faseFilter === "alle" || p.fase === faseFilter;
-      const statusOk = statusFilter === "alle" || p.mappedStatus === statusFilter
-        || (statusFilter === "pause" && p.mappedStatus === "visjon");
+      const faseOk = faseFilter === "alle" || p.fase === faseFilter;
+      const statusOk = statusFilters[p.mappedStatus];
       return faseOk && statusOk;
     });
-  }, [projects, faseFilter, statusFilter]);
+  }, [projects, faseFilter, statusFilters]);
 
   function handleSaved(updated: MasterplanRow) {
     setRows((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
@@ -863,13 +866,34 @@ export function ProsjekterClient({ rows: initialRows }: { rows: MasterplanRow[] 
           ))}
         </select>
 
-        <select value={statusFilter} onChange={(e) => setStatus(e.target.value)}
-          className={cn(selectCls, "min-w-[160px]")}>
-          <option value="alle">Alle statuser</option>
-          {(["aktiv", "pause", "idé", "fullført"] as MappedStatus[]).map((s) => (
-            <option key={s} value={s}>{statusConfig[s].label}</option>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border border-border bg-card px-3 py-2">
+          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            Status
+          </span>
+          {STATUS_FILTER_OPTIONS.map((s) => (
+            <label
+              key={s}
+              className="flex cursor-pointer items-center gap-1.5 text-xs text-foreground"
+            >
+              <Checkbox
+                checked={statusFilters[s]}
+                onCheckedChange={(checked) =>
+                  setStatusFilters((prev) => ({
+                    ...prev,
+                    [s]: checked === true,
+                  }))
+                }
+              />
+              <span
+                className={cn(
+                  "inline-block h-1.5 w-1.5 rounded-full shrink-0",
+                  statusConfig[s].dot
+                )}
+              />
+              {statusConfig[s].label}
+            </label>
           ))}
-        </select>
+        </div>
 
         <span className="flex-1 self-center text-xs text-muted-foreground">
           {visible.length} av {rows.length} oppgaver
