@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
-import { Loader2, Star, Trash2, X } from "lucide-react";
+import { Loader2, Star, Trash2 } from "lucide-react";
+import { AppModal } from "@/components/AppModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -71,7 +71,6 @@ export function ClimbingRouteDetailModal({
   onSaved,
   onDeleted,
 }: ClimbingRouteDetailModalProps) {
-  const [mounted, setMounted] = useState(false);
   const [crag, setCrag] = useState(route.crag);
   const [rutenavn, setRutenavn] = useState(route.rutenavn);
   const [grad, setGrad] = useState(route.grad.trim());
@@ -82,8 +81,6 @@ export function ClimbingRouteDetailModal({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     setCrag(route.crag);
@@ -165,58 +162,77 @@ export function ClimbingRouteDetailModal({
     }
   }
 
-  if (!mounted) return null;
-
-  return createPortal(
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/65 backdrop-blur-sm p-4"
-      onMouseDown={onClose}
-      role="presentation"
-    >
-      <div
-        className="flex w-full max-w-md flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl max-h-[90vh]"
-        onMouseDown={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-labelledby="route-detail-title"
-      >
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border px-4 py-3">
-          <div className="min-w-0 flex-1 space-y-1">
-            <h2
-              id="route-detail-title"
-              className="truncate text-sm font-semibold text-foreground"
-            >
-              {route.rutenavn}
-            </h2>
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge
-                variant={status === "prosjekt" ? "outline" : "secondary"}
-                className={cn(
-                  "h-5 text-[9px]",
-                  status === "prosjekt" && "border-primary/30 text-primary"
-                )}
-              >
-                {status === "prosjekt" ? "Prosjekt" : "Send"}
-              </Badge>
-              <span className="text-[10px] text-muted-foreground">
-                {grad} · {crag}
-              </span>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-            aria-label="Lukk"
+  return (
+    <AppModal
+      open
+      onClose={onClose}
+      aria-labelledby="route-detail-title"
+      title={
+        <span id="route-detail-title" className="truncate">
+          {route.rutenavn}
+        </span>
+      }
+      description={
+        <span className="flex flex-wrap items-center gap-2">
+          <Badge
+            variant={status === "prosjekt" ? "outline" : "secondary"}
+            className={cn(
+              "h-5 text-[9px]",
+              status === "prosjekt" && "border-primary/30 text-primary"
+            )}
           >
-            <X className="h-4 w-4" />
-          </button>
+            {status === "prosjekt" ? "Prosjekt" : "Send"}
+          </Badge>
+          <span>
+            {grad} · {crag}
+          </span>
+        </span>
+      }
+      footer={
+        <div className="flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center">
+          <Button
+            type="button"
+            variant="outline"
+            className="order-2 h-9 gap-2 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive sm:order-1 sm:mr-auto"
+            disabled={saving || deleting}
+            onClick={handleDelete}
+          >
+            {deleting ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Trash2 className="h-3.5 w-3.5" />
+            )}
+            Slett rute
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="order-3 h-9 sm:order-2"
+            disabled={saving || deleting}
+            onClick={onClose}
+          >
+            Avbryt
+          </Button>
+          <Button
+            type="submit"
+            form="route-detail-form"
+            className="order-1 h-9 sm:order-3"
+            disabled={saving || deleting}
+          >
+            {saving ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Lagrer…
+              </>
+            ) : (
+              "Lagre endringer"
+            )}
+          </Button>
         </div>
-
-        <form
-          onSubmit={handleSave}
-          className="flex min-h-0 flex-1 flex-col"
-        >
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
+      }
+    >
+      <form id="route-detail-form" onSubmit={handleSave}>
+        <div className="space-y-4 px-4 py-4">
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground">Crag</p>
               <select
@@ -320,50 +336,8 @@ export function ClimbingRouteDetailModal({
             </div>
 
             {error && <p className="text-xs text-destructive">{error}</p>}
-          </div>
-
-          <div className="flex shrink-0 flex-col gap-2 border-t border-border px-4 py-4 sm:flex-row sm:items-center">
-            <Button
-              type="button"
-              variant="outline"
-              className="order-2 h-9 gap-2 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive sm:order-1 sm:mr-auto"
-              disabled={saving || deleting}
-              onClick={handleDelete}
-            >
-              {deleting ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Trash2 className="h-3.5 w-3.5" />
-              )}
-              Slett rute
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="order-3 h-9 sm:order-2"
-              disabled={saving || deleting}
-              onClick={onClose}
-            >
-              Avbryt
-            </Button>
-            <Button
-              type="submit"
-              className="order-1 h-9 sm:order-3"
-              disabled={saving || deleting}
-            >
-              {saving ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Lagrer…
-                </>
-              ) : (
-                "Lagre endringer"
-              )}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>,
-    document.body
+        </div>
+      </form>
+    </AppModal>
   );
 }

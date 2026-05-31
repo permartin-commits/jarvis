@@ -5,6 +5,7 @@ import { BrainCircuit, Grip, Timer } from "lucide-react";
 import { Sidebar } from "@/components/sidebar";
 import { PiaCoreSection } from "@/components/PiaCoreSection";
 import { BeastmakerLogger } from "@/app/fitness/BeastmakerLogger";
+import { TrainingSessionsLog } from "./TrainingSessionsLog";
 import { cn } from "@/lib/utils";
 import { ClimbingRouteLog } from "./ClimbingRouteLog";
 import { KlatringActionPanel } from "./KlatringActionPanel";
@@ -70,7 +71,10 @@ export function KlatringShell() {
               </div>
 
               {tab === "beastmaker" && (
-                <BeastmakerLogger refreshKey={beastmakerRefresh} />
+                <>
+                  <TrainingSessionsLog refreshKey={beastmakerRefresh} />
+                  <BeastmakerLogger refreshKey={beastmakerRefresh} />
+                </>
               )}
               {tab === "klatring" && (
                 <ClimbingRouteLog refreshKey={routesRefresh} />

@@ -1,21 +1,26 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Mountain, Star } from "lucide-react";
+import { Loader2, Mountain, Plus, Star } from "lucide-react";
+import { AppModal } from "@/components/AppModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { KLATRING_PANEL_BUTTON_CLASS } from "./klatring-panel-buttons";
 import { FRENCH_GRADES } from "@/lib/climbing";
+
+const ROUTE_FORM_ID = "climbing-route-register-form";
 
 interface ClimbingRouteFormProps {
   onSaved?: () => void;
   onClose?: () => void;
+  onSavingChange?: (saving: boolean) => void;
 }
 
 const nativeSelectClass =
-  "h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+  "h-9 w-full rounded-lg border border-border/60 bg-secondary/20 px-2.5 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 function loadCrags(): Promise<string[]> {
   return fetch("/api/climbing-routes")
@@ -80,6 +85,7 @@ export function ClimbingRouteForm({ onSaved, onClose }: ClimbingRouteFormProps) 
     }
 
     setSaving(true);
+    onSavingChange?.(true);
     try {
       const res = await fetch("/api/climbing-routes", {
         method: "POST",
@@ -112,13 +118,20 @@ export function ClimbingRouteForm({ onSaved, onClose }: ClimbingRouteFormProps) 
       setError("Nettverksfeil — prøv igjen.");
     } finally {
       setSaving(false);
+      onSavingChange?.(false);
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
+    <form
+      id={ROUTE_FORM_ID}
+      onSubmit={handleSubmit}
+      className="space-y-4 px-4 py-4"
+    >
       <div className="space-y-2">
-        <p className="text-xs text-muted-foreground">Crag</p>
+        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          Crag
+        </p>
         {crags.length > 0 && (
           <div className="flex gap-1 rounded-lg border border-border p-0.5">
             <button
@@ -170,7 +183,9 @@ export function ClimbingRouteForm({ onSaved, onClose }: ClimbingRouteFormProps) 
       </div>
 
       <div className="space-y-2">
-        <p className="text-xs text-muted-foreground">Rutenavn</p>
+        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          Rutenavn
+        </p>
         <Input
           value={rutenavn}
           onChange={(e) => setRutenavn(e.target.value)}
@@ -181,7 +196,9 @@ export function ClimbingRouteForm({ onSaved, onClose }: ClimbingRouteFormProps) 
       </div>
 
       <div className="space-y-2">
-        <p className="text-xs text-muted-foreground">Grad (fransk)</p>
+        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          Grad (fransk)
+        </p>
         <select
           value={grad}
           onChange={(e) => setGrad(e.target.value)}
@@ -196,7 +213,9 @@ export function ClimbingRouteForm({ onSaved, onClose }: ClimbingRouteFormProps) 
       </div>
 
       <div className="space-y-2">
-        <p className="text-xs text-muted-foreground">Stjerner (0–3)</p>
+        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          Stjerner (0–3)
+        </p>
         <div className="flex gap-1">
           {[0, 1, 2, 3].map((n) => (
             <button
@@ -204,7 +223,7 @@ export function ClimbingRouteForm({ onSaved, onClose }: ClimbingRouteFormProps) 
               type="button"
               onClick={() => setStjerner(n)}
               className={cn(
-                "flex flex-1 items-center justify-center gap-0.5 rounded-lg border py-2 text-xs transition-colors",
+                "flex flex-1 items-center justify-center gap-0.5 rounded-md border py-2 text-xs transition-colors",
                 stjerner === n
                   ? "border-primary/40 bg-primary/10 text-primary"
                   : "border-border text-muted-foreground hover:border-primary/20"
@@ -226,7 +245,9 @@ export function ClimbingRouteForm({ onSaved, onClose }: ClimbingRouteFormProps) 
       </div>
 
       <div className="space-y-2">
-        <p className="text-xs text-muted-foreground">Dato for send</p>
+        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          Dato for send
+        </p>
         <Input
           type="date"
           value={datoSend}
@@ -258,28 +279,100 @@ export function ClimbingRouteForm({ onSaved, onClose }: ClimbingRouteFormProps) 
       </div>
 
       <div className="space-y-2">
-        <p className="text-xs text-muted-foreground">Kommentar</p>
+        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          Kommentar
+        </p>
         <Textarea
           value={kommentar}
           onChange={(e) => setKommentar(e.target.value)}
           placeholder="Beta, forhold, notater…"
           rows={2}
-          className="min-h-[56px] resize-none text-sm"
+          className="min-h-[56px] resize-none rounded-lg border border-border/60 bg-secondary/15 text-sm"
         />
       </div>
 
-      {error && (
-        <p className="text-xs text-destructive">{error}</p>
-      )}
-
-      <Button
-        type="submit"
-        disabled={saving}
-        className="mt-auto h-9 w-full gap-2 text-xs font-semibold"
-      >
-        <Mountain className="h-3.5 w-3.5" />
-        {saving ? "Lagrer…" : "Lagre rute"}
-      </Button>
+      {error && <p className="text-xs text-destructive">{error}</p>}
     </form>
+  );
+}
+
+/** Knapp i høyre panel — åpner AppModal for ny rute. */
+export function ClimbingRouteRegisterButton({
+  onRouteSaved,
+}: {
+  onRouteSaved?: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  function handleClose() {
+    if (saving) return;
+    setOpen(false);
+  }
+
+  return (
+    <>
+      <Button
+        type="button"
+        className={KLATRING_PANEL_BUTTON_CLASS}
+        onClick={() => setOpen(true)}
+      >
+        <Plus className="h-4 w-4" />
+        Registrer rute
+      </Button>
+
+      <AppModal
+        open={open}
+        onClose={handleClose}
+        closeOnBackdrop={!saving}
+        showCloseButton={!saving}
+        maxWidth="max-w-md"
+        aria-labelledby="climbing-route-register-title"
+        title={
+          <span id="climbing-route-register-title" className="flex items-center gap-2">
+            <Mountain className="h-4 w-4 text-primary" />
+            Ny rute
+          </span>
+        }
+        description="Logg send eller prosjekt. Uten send-dato tagges ruten som Prosjekt."
+        footer={
+          <div className="flex gap-2 px-4 py-4">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-9 flex-1 text-xs"
+              disabled={saving}
+              onClick={handleClose}
+            >
+              Avbryt
+            </Button>
+            <Button
+              type="submit"
+              form={ROUTE_FORM_ID}
+              className="h-9 flex-1 gap-2 text-xs font-semibold"
+              disabled={saving}
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Lagrer…
+                </>
+              ) : (
+                <>
+                  <Mountain className="h-3.5 w-3.5" />
+                  Lagre rute
+                </>
+              )}
+            </Button>
+          </div>
+        }
+      >
+        <ClimbingRouteForm
+          onSaved={onRouteSaved}
+          onClose={() => setOpen(false)}
+          onSavingChange={setSaving}
+        />
+      </AppModal>
+    </>
   );
 }
