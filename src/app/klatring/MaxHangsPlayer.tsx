@@ -145,6 +145,9 @@ function MaxHangsModal({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [webhookError, setWebhookError] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<string | null>(null);
+  const [savingMode, setSavingMode] = useState<"none" | "save" | "analyze">(
+    "none"
+  );
 
   const transitioningRef = useRef(false);
 
@@ -321,12 +324,13 @@ function MaxHangsModal({
     else handleClose();
   }
 
-  async function handleSave() {
+  async function handleSave(runWebhook: boolean) {
     if (!workout || completedSets.length === 0) {
       setSaveError("Ingen sett å lagre.");
       return;
     }
     setPhase("saving");
+    setSavingMode(runWebhook ? "analyze" : "save");
     setSaveError(null);
     setWebhookError(null);
     setAnalysis(null);
@@ -344,14 +348,26 @@ function MaxHangsModal({
           notes: fullNotes,
           is_completed: completedSets.length >= workout.totalSets,
           hang_logs: completedSets,
+          run_webhook: runWebhook,
         }),
       });
       const data = await res.json();
+      setSavingMode("none");
+
       if (!res.ok) {
         setSaveError(data.error ?? "Lagring feilet.");
         setPhase("summary");
         return;
       }
+
+      onSessionSaved?.();
+
+      if (!runWebhook) {
+        resetAll();
+        onClose();
+        return;
+      }
+
       if (!data.webhook_ok) {
         setWebhookError(
           data.webhook_error ?? "Økt lagret, men AI-analyse (n8n) feilet."
@@ -359,8 +375,8 @@ function MaxHangsModal({
       }
       if (data.analysis) setAnalysis(data.analysis);
       setPhase("analysis");
-      onSessionSaved?.();
     } catch {
+      setSavingMode("none");
       setSaveError("Nettverksfeil — prøv igjen.");
       setPhase("summary");
     }
@@ -375,29 +391,47 @@ function MaxHangsModal({
 
   const summaryFooter =
     (phase === "summary" || phase === "saving") && workout ? (
-      <div className="flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-2 px-4 py-4">
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button
+            type="button"
+            variant="outline"
+            className="h-9 flex-1 text-xs"
+            disabled={phase === "saving"}
+            onClick={resetAll}
+          >
+            Forkast
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-9 flex-1 gap-2 text-xs font-semibold"
+            disabled={phase === "saving"}
+            onClick={() => handleSave(false)}
+          >
+            {phase === "saving" && savingMode === "save" ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Lagrer…
+              </>
+            ) : (
+              "Lagre uten analyse"
+            )}
+          </Button>
+        </div>
         <Button
           type="button"
-          variant="outline"
-          className="h-9 flex-1 text-xs"
+          className="h-9 w-full gap-2 text-xs font-semibold"
           disabled={phase === "saving"}
-          onClick={resetAll}
+          onClick={() => handleSave(true)}
         >
-          Forkast
-        </Button>
-        <Button
-          type="button"
-          className="h-9 flex-1 gap-2 text-xs font-semibold"
-          disabled={phase === "saving"}
-          onClick={handleSave}
-        >
-          {phase === "saving" ? (
+          {phase === "saving" && savingMode === "analyze" ? (
             <>
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              Lagrer…
+              Lagrer og analyserer…
             </>
           ) : (
-            "Lagre og analyser"
+            "Lagre og send til analyse"
           )}
         </Button>
       </div>

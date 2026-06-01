@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Loader2, Timer } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Loader2, Sparkles, Timer } from "lucide-react";
 import { AppModal } from "@/components/AppModal";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -14,41 +14,80 @@ import {
 interface TrainingSessionDetailModalProps {
   sessionId: number;
   onClose: () => void;
+  onUpdated?: () => void;
 }
 
 export function TrainingSessionDetailModal({
   sessionId,
   onClose,
+  onUpdated,
 }: TrainingSessionDetailModalProps) {
   const [session, setSession] = useState<TrainingSession | null>(null);
   const [hangLogs, setHangLogs] = useState<HangLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analyzeError, setAnalyzeError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadSession = useCallback(async () => {
     setLoading(true);
     setError(null);
-    fetch(`/api/training-sessions/${sessionId}`)
-      .then(async (r) => {
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.error ?? "Kunne ikke hente økt");
-        setSession(d.session as TrainingSession);
-        setHangLogs((d.hang_logs as HangLog[]) ?? []);
-      })
-      .catch((e) => {
-        setError(e instanceof Error ? e.message : "Feil ved lasting");
-        setSession(null);
-        setHangLogs([]);
-      })
-      .finally(() => setLoading(false));
+    try {
+      const r = await fetch(`/api/training-sessions/${sessionId}`);
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error ?? "Kunne ikke hente økt");
+      setSession(d.session as TrainingSession);
+      setHangLogs((d.hang_logs as HangLog[]) ?? []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Feil ved lasting");
+      setSession(null);
+      setHangLogs([]);
+    } finally {
+      setLoading(false);
+    }
   }, [sessionId]);
 
+  useEffect(() => {
+    loadSession();
+  }, [loadSession]);
+
+  async function handleSendToAnalysis() {
+    setAnalyzing(true);
+    setAnalyzeError(null);
+    try {
+      const res = await fetch(
+        `/api/training-sessions/${sessionId}/analyze`,
+        { method: "POST" }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        setAnalyzeError(
+          data.webhook_error ?? data.error ?? "Kunne ikke sende til analyse."
+        );
+        return;
+      }
+      setSession(data.session as TrainingSession);
+      onUpdated?.();
+    } catch {
+      setAnalyzeError("Nettverksfeil — prøv igjen.");
+    } finally {
+      setAnalyzing(false);
+    }
+  }
+
   const title = session?.protocol_type ?? "Treningsøkt";
+  const hasMultiRep = hangLogs.some(
+    (h, _, arr) =>
+      arr.filter((x) => x.set_number === h.set_number).length > 1 ||
+      h.rep_number > 1
+  );
 
   return (
     <AppModal
       open
       onClose={onClose}
+      closeOnBackdrop={!analyzing}
+      showCloseButton={!analyzing}
       maxWidth="max-w-lg"
       aria-labelledby="training-session-detail-title"
       title={
@@ -63,10 +102,30 @@ export function TrainingSessionDetailModal({
           : undefined
       }
       footer={
-        <div className="px-4 py-4">
+        <div className="flex flex-col gap-2 px-4 py-4">
           <Button
             type="button"
-            className="h-9 w-full text-xs font-semibold"
+            className="h-9 w-full gap-2 text-xs font-semibold"
+            disabled={loading || analyzing || !!error}
+            onClick={handleSendToAnalysis}
+          >
+            {analyzing ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Sender til analyse…
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-3.5 w-3.5" />
+                Send til analyse
+              </>
+            )}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-9 w-full text-xs"
+            disabled={analyzing}
             onClick={onClose}
           >
             Lukk
@@ -85,6 +144,12 @@ export function TrainingSessionDetailModal({
         {error && (
           <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
             {error}
+          </p>
+        )}
+
+        {analyzeError && (
+          <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+            {analyzeError}
           </p>
         )}
 
@@ -133,10 +198,7 @@ export function TrainingSessionDetailModal({
                   >
                     <span className="text-muted-foreground">
                       S{log.set_number}
-                      {log.rep_number > 1 || hangLogs.some((h) => h.set_number === log.set_number && h.rep_number > 1)
-                        ? ` R${log.rep_number}`
-                        : ""}{" "}
-                      · {log.hold_size}
+                      {hasMultiRep ? ` R${log.rep_number}` : ""} · {log.hold_size}
                       {log.weight_added > 0 ? ` +${log.weight_added} kg` : ""}
                     </span>
                     <span

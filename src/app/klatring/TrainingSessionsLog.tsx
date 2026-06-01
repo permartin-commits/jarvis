@@ -12,7 +12,13 @@ import { cn } from "@/lib/utils";
 
 const SESSIONS_PREVIEW_COUNT = 5;
 
-export function TrainingSessionsLog({ refreshKey = 0 }: { refreshKey?: number }) {
+export function TrainingSessionsLog({
+  refreshKey = 0,
+  onSessionUpdated,
+}: {
+  refreshKey?: number;
+  onSessionUpdated?: () => void;
+}) {
   const [sessions, setSessions] = useState<TrainingSession[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [showAll, setShowAll] = useState(false);
@@ -96,6 +102,13 @@ export function TrainingSessionsLog({ refreshKey = 0 }: { refreshKey?: number })
         <TrainingSessionDetailModal
           sessionId={selectedId}
           onClose={() => setSelectedId(null)}
+          onUpdated={() => {
+            fetch("/api/training-sessions")
+              .then((r) => r.json())
+              .then((d) => setSessions((d.sessions as TrainingSession[]) ?? []))
+              .catch(() => {});
+            onSessionUpdated?.();
+          }}
         />
       )}
     </>

@@ -115,55 +115,81 @@ export function WorkoutCircularTimer({
 
 export function WorkoutSummaryFooter({
   saving,
+  savingMode,
   onDiscard,
-  onSave,
+  onSaveOnly,
+  onSaveAndAnalyze,
 }: {
   saving: boolean;
+  savingMode: "none" | "save" | "analyze";
   onDiscard: () => void;
-  onSave: () => void;
+  onSaveOnly: () => void;
+  onSaveAndAnalyze: () => void;
 }) {
   return (
-    <div className="flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center">
+    <div className="flex flex-col gap-2 px-4 py-4">
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-9 flex-1 text-xs"
+          disabled={saving}
+          onClick={onDiscard}
+        >
+          Forkast
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-9 flex-1 gap-2 text-xs font-semibold"
+          disabled={saving}
+          onClick={onSaveOnly}
+        >
+          {saving && savingMode === "save" ? (
+            <>
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Lagrer…
+            </>
+          ) : (
+            "Lagre uten analyse"
+          )}
+        </Button>
+      </div>
       <Button
         type="button"
-        variant="outline"
-        className="h-9 flex-1 text-xs"
+        className="h-9 w-full gap-2 text-xs font-semibold"
         disabled={saving}
-        onClick={onDiscard}
+        onClick={onSaveAndAnalyze}
       >
-        Forkast
-      </Button>
-      <Button
-        type="button"
-        className="h-9 flex-1 gap-2 text-xs font-semibold"
-        disabled={saving}
-        onClick={onSave}
-      >
-        {saving ? (
+        {saving && savingMode === "analyze" ? (
           <>
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            Lagrer…
+            Lagrer og analyserer…
           </>
         ) : (
-          "Lagre og analyser"
+          "Lagre og send til analyse"
         )}
       </Button>
     </div>
   );
 }
 
-export async function submitTrainingSession(payload: {
-  protocol_type: string;
-  perceived_effort: number;
-  notes: string;
-  is_completed: boolean;
-  hang_logs: import("@/lib/training").HangLogDraft[];
-}): Promise<{
+export async function submitTrainingSession(
+  payload: {
+    protocol_type: string;
+    perceived_effort: number;
+    notes: string;
+    is_completed: boolean;
+    hang_logs: import("@/lib/training").HangLogDraft[];
+  },
+  options: { run_webhook: boolean }
+): Promise<{
   ok: boolean;
   error?: string;
-  webhook_ok?: boolean;
+  webhook_ok?: boolean | null;
   webhook_error?: string | null;
   analysis?: string | null;
+  next_session_suggestion?: string | null;
 }> {
   const res = await fetch("/api/training-sessions", {
     method: "POST",
@@ -174,6 +200,7 @@ export async function submitTrainingSession(payload: {
       notes: payload.notes.trim() || null,
       is_completed: payload.is_completed,
       hang_logs: payload.hang_logs,
+      run_webhook: options.run_webhook,
     }),
   });
   const data = await res.json();
@@ -185,6 +212,7 @@ export async function submitTrainingSession(payload: {
     webhook_ok: data.webhook_ok,
     webhook_error: data.webhook_error,
     analysis: data.analysis,
+    next_session_suggestion: data.next_session_suggestion,
   };
 }
 

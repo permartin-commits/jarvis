@@ -88,6 +88,9 @@ function RepeatersModal({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [webhookError, setWebhookError] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<string | null>(null);
+  const [savingMode, setSavingMode] = useState<"none" | "save" | "analyze">(
+    "none"
+  );
 
   const transitioningRef = useRef(false);
 
@@ -311,12 +314,13 @@ function RepeatersModal({
     else handleClose();
   }
 
-  async function handleSave() {
+  async function handleSave(runWebhook: boolean) {
     if (!workout || completedReps.length === 0) {
       setSaveError("Ingen reps å lagre.");
       return;
     }
     setPhase("saving");
+    setSavingMode(runWebhook ? "analyze" : "save");
     setSaveError(null);
     setWebhookError(null);
     setAnalysis(null);
@@ -326,19 +330,33 @@ function RepeatersModal({
     const configNote = `${REPEATERS_PROTOCOL}: ${workout.totalSets} sett × ${workout.repsPerSet} reps (${workout.hangSeconds}s heng / ${workout.shortPauseSeconds}s pause / ${workout.longRestSeconds / 60} min hvile) · ${workout.holdSize}${workout.weight > 0 ? ` +${workout.weight} kg` : ""} · ${setsLogged} sett logget · ${failedReps} feilede reps`;
     const fullNotes = [configNote, notes.trim()].filter(Boolean).join("\n");
 
-    const result = await submitTrainingSession({
-      protocol_type: REPEATERS_PROTOCOL,
-      perceived_effort: perceivedEffort,
-      notes: fullNotes,
-      is_completed: setsLogged >= workout.totalSets,
-      hang_logs: completedReps,
-    });
+    const result = await submitTrainingSession(
+      {
+        protocol_type: REPEATERS_PROTOCOL,
+        perceived_effort: perceivedEffort,
+        notes: fullNotes,
+        is_completed: setsLogged >= workout.totalSets,
+        hang_logs: completedReps,
+      },
+      { run_webhook: runWebhook }
+    );
+
+    setSavingMode("none");
 
     if (!result.ok) {
       setSaveError(result.error ?? "Lagring feilet.");
       setPhase("summary");
       return;
     }
+
+    onSessionSaved?.();
+
+    if (!runWebhook) {
+      resetAll();
+      onClose();
+      return;
+    }
+
     if (!result.webhook_ok) {
       setWebhookError(
         result.webhook_error ?? "Økt lagret, men AI-analyse (n8n) feilet."
@@ -346,7 +364,6 @@ function RepeatersModal({
     }
     if (result.analysis) setAnalysis(result.analysis);
     setPhase("analysis");
-    onSessionSaved?.();
   }
 
   const inWorkLoop = phase === "hang" || phase === "short_pause";
@@ -364,8 +381,10 @@ function RepeatersModal({
     (phase === "summary" || phase === "saving") && workout ? (
       <WorkoutSummaryFooter
         saving={phase === "saving"}
+        savingMode={savingMode}
         onDiscard={resetAll}
-        onSave={handleSave}
+        onSaveOnly={() => handleSave(false)}
+        onSaveAndAnalyze={() => handleSave(true)}
       />
     ) : undefined;
 
