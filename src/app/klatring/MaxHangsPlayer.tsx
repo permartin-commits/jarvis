@@ -148,7 +148,6 @@ function MaxHangsModal({
 
   const transitioningRef = useRef(false);
 
-  const totalSets = workout?.totalSets ?? DEFAULT_MAX_HANGS_SETS;
   const hangSeconds = workout?.hangSeconds ?? DEFAULT_HANG_SECONDS;
   const restSeconds = workout?.restSeconds ?? DEFAULT_REST_MINUTES * 60;
 
@@ -273,6 +272,7 @@ function MaxHangsModal({
     goToSummary,
     workout,
     hangSeconds,
+    restSeconds,
   ]);
 
   function handleStartWorkout() {

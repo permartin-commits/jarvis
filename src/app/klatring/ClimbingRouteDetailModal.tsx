@@ -91,6 +91,7 @@ export function ClimbingRouteDetailModal({
     setFlash(route.flash);
     setKommentar(route.kommentar ?? "");
     setError(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- synk skjema kun ved bytte rute (id)
   }, [route.id]);
 
   const cragChoices = useMemo(() => {

@@ -29,7 +29,11 @@ function loadCrags(): Promise<string[]> {
     .catch(() => []);
 }
 
-export function ClimbingRouteForm({ onSaved, onClose }: ClimbingRouteFormProps) {
+export function ClimbingRouteForm({
+  onSaved,
+  onClose,
+  onSavingChange,
+}: ClimbingRouteFormProps) {
   const [crags, setCrags] = useState<string[]>([]);
   const [cragMode, setCragMode] = useState<"existing" | "new">("existing");
   const [selectedCrag, setSelectedCrag] = useState("");
@@ -40,7 +44,6 @@ export function ClimbingRouteForm({ onSaved, onClose }: ClimbingRouteFormProps) 
   const [datoSend, setDatoSend] = useState("");
   const [flash, setFlash] = useState(false);
   const [kommentar, setKommentar] = useState("");
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -84,7 +87,6 @@ export function ClimbingRouteForm({ onSaved, onClose }: ClimbingRouteFormProps) 
       return;
     }
 
-    setSaving(true);
     onSavingChange?.(true);
     try {
       const res = await fetch("/api/climbing-routes", {
@@ -117,7 +119,6 @@ export function ClimbingRouteForm({ onSaved, onClose }: ClimbingRouteFormProps) 
     } catch {
       setError("Nettverksfeil — prøv igjen.");
     } finally {
-      setSaving(false);
       onSavingChange?.(false);
     }
   }
