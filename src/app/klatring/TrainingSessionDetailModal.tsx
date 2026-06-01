@@ -68,6 +68,7 @@ export function TrainingSessionDetailModal({
       }
       setSession(data.session as TrainingSession);
       onUpdated?.();
+      onClose();
     } catch {
       setAnalyzeError("Nettverksfeil — prøv igjen.");
     } finally {

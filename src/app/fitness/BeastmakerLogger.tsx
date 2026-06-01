@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { ArrowUpDown, ChevronUp, ChevronDown, Filter } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 const PREVIEW_COUNT = 5;
@@ -98,131 +97,125 @@ export function BeastmakerLogger({ refreshKey = 0 }: { refreshKey?: number }) {
     );
   }
 
+  if (sessions.length === 0) return null;
+
   return (
     <section className="overflow-hidden rounded-xl border border-border">
-      <header className="flex items-center gap-3 border-b border-border px-4 py-3.5">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
-          <span className="text-sm font-bold text-primary">B</span>
+      <header className="flex items-center gap-3 border-b border-border px-4 py-3">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 ring-1 ring-primary/20">
+          <span className="text-xs font-bold text-primary">B</span>
         </div>
-        <div className="min-w-0 flex-1 text-left">
+        <div className="min-w-0 flex-1">
           <h2 className="text-sm font-semibold text-foreground">Beastmaker</h2>
           <p className="text-xs text-muted-foreground">
-            {sessions.length} økter logget · timer i høyre panel
+            {sessions.length} enkeltregistreringer
           </p>
         </div>
       </header>
 
-      <div className="border-t border-border p-4">
-        <Card className="overflow-hidden border-border bg-card">
-          <CardHeader className="border-b border-border px-4 pb-3 pt-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Historikk
-              </CardTitle>
-              <span className="text-xs text-muted-foreground">
-                {displayed.length}
-                {filterCm !== "all" ? ` / ${sessions.length}` : ""} økter
-              </span>
-            </div>
-          </CardHeader>
-
-          <CardContent className="p-0">
-            {sessions.length === 0 ? (
-              <p className="py-8 text-center text-xs text-muted-foreground">
-                Ingen økter registrert ennå.
-              </p>
-            ) : (
-              <>
-                <div className="flex items-center gap-3 border-b border-border/60 bg-secondary/20 px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                  <button
-                    type="button"
-                    onClick={() => toggleSort("dato")}
-                    className="flex flex-1 items-center gap-1 text-left transition-colors hover:text-foreground"
-                  >
-                    Dato <SortIcon col="dato" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={cycleFilterCm}
-                    className={cn(
-                      "flex w-16 items-center gap-1 transition-colors hover:text-foreground",
-                      filterCm !== "all" && "text-primary"
-                    )}
-                    title="Klikk for å filtrere på grep"
-                  >
-                    <Filter className="h-3 w-3 shrink-0" />
-                    {filterCm === "all" ? "Grep" : `${filterCm} cm`}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => toggleSort("varighet_sekunder")}
-                    className="flex w-14 items-center justify-end gap-1 transition-colors hover:text-foreground"
-                  >
-                    Tid <SortIcon col="varighet_sekunder" />
-                  </button>
-                  <span className="w-16 shrink-0 text-right">Vekt</span>
-                </div>
-
-                <div className="divide-y divide-border/60">
-                  {visibleRows.map((s) => (
-                    <div
-                      key={s.id}
-                      className="px-4 py-3 transition-colors hover:bg-secondary/20"
-                    >
-                      <div className="flex items-baseline gap-3">
-                        <span className="flex-1 text-xs font-medium text-foreground">
-                          {formatDate(s.starttid)}
-                        </span>
-                        <span
-                          className={cn(
-                            "w-16 text-xs font-semibold tabular-nums",
-                            s.cm_grip === 1
-                              ? "text-emerald-400"
-                              : s.cm_grip === 2
-                              ? "text-yellow-400"
-                              : "text-orange-400"
-                          )}
-                        >
-                          {s.cm_grip} cm
-                        </span>
-                        <span className="w-14 shrink-0 text-right text-xs tabular-nums text-foreground">
-                          {formatDuration(s.varighet_sekunder)}
-                        </span>
-                        <span className="w-16 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
-                          {s.med_vekt
-                            ? s.ekstravekt_kg
-                              ? `+${s.ekstravekt_kg} kg`
-                              : "Ja"
-                            : "—"}
-                        </span>
-                      </div>
-                      {s.kommentar && (
-                        <p className="mt-1 text-[11px] leading-snug text-muted-foreground/70">
-                          {s.kommentar}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                {hasMore && (
-                  <div className="border-t border-border/60 px-4 py-3">
-                    <button
-                      type="button"
-                      onClick={() => setShowAll((v) => !v)}
-                      className="w-full rounded-md border border-border bg-secondary/20 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
-                    >
-                      {showAll
-                        ? "Vis færre"
-                        : `Vis mer (${displayed.length - PREVIEW_COUNT} til)`}
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
+      <div className="flex items-center justify-between border-b border-border/60 px-4 py-2">
+        <span className="text-xs uppercase tracking-wide text-muted-foreground">
+          Historikk
+        </span>
+        <span className="text-xs text-muted-foreground">
+          {displayed.length}
+          {filterCm !== "all" ? ` / ${sessions.length}` : ""} økter
+        </span>
       </div>
+
+      {sessions.length === 0 ? (
+        <p className="py-8 text-center text-xs text-muted-foreground">
+          Ingen økter registrert ennå.
+        </p>
+      ) : (
+        <>
+          <div className="flex items-center gap-3 border-b border-border/60 bg-secondary/20 px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            <button
+              type="button"
+              onClick={() => toggleSort("dato")}
+              className="flex flex-1 items-center gap-1 text-left transition-colors hover:text-foreground"
+            >
+              Dato <SortIcon col="dato" />
+            </button>
+            <button
+              type="button"
+              onClick={cycleFilterCm}
+              className={cn(
+                "flex w-16 items-center gap-1 transition-colors hover:text-foreground",
+                filterCm !== "all" && "text-primary"
+              )}
+              title="Klikk for å filtrere på grep"
+            >
+              <Filter className="h-3 w-3 shrink-0" />
+              {filterCm === "all" ? "Grep" : `${filterCm} cm`}
+            </button>
+            <button
+              type="button"
+              onClick={() => toggleSort("varighet_sekunder")}
+              className="flex w-14 items-center justify-end gap-1 transition-colors hover:text-foreground"
+            >
+              Tid <SortIcon col="varighet_sekunder" />
+            </button>
+            <span className="w-16 shrink-0 text-right">Vekt</span>
+          </div>
+
+          <div className="divide-y divide-border/60">
+            {visibleRows.map((s) => (
+              <div
+                key={s.id}
+                className="px-4 py-2.5 transition-colors hover:bg-secondary/20"
+              >
+                <div className="flex items-baseline gap-3">
+                  <span className="flex-1 text-xs font-medium text-foreground">
+                    {formatDate(s.starttid)}
+                  </span>
+                  <span
+                    className={cn(
+                      "w-16 text-xs font-semibold tabular-nums",
+                      s.cm_grip === 1
+                        ? "text-emerald-400"
+                        : s.cm_grip === 2
+                          ? "text-yellow-400"
+                          : "text-orange-400"
+                    )}
+                  >
+                    {s.cm_grip} cm
+                  </span>
+                  <span className="w-14 shrink-0 text-right text-xs tabular-nums text-foreground">
+                    {formatDuration(s.varighet_sekunder)}
+                  </span>
+                  <span className="w-16 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+                    {s.med_vekt
+                      ? s.ekstravekt_kg
+                        ? `+${s.ekstravekt_kg} kg`
+                        : "Ja"
+                      : "—"}
+                  </span>
+                </div>
+                {s.kommentar && (
+                  <p className="mt-1 text-[11px] leading-snug text-muted-foreground/70">
+                    {s.kommentar}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {hasMore && (
+            <div className="border-t border-border/60 px-4 py-2">
+              <button
+                type="button"
+                onClick={() => setShowAll((v) => !v)}
+                className="h-8 w-full text-xs text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {showAll
+                  ? "Vis færre"
+                  : `Vis mer (${displayed.length - PREVIEW_COUNT} til)`}
+              </button>
+            </div>
+          )}
+        </>
+      )}
     </section>
   );
 }

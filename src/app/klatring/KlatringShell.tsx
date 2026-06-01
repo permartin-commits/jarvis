@@ -9,7 +9,6 @@ import { TrainingSessionsLog } from "./TrainingSessionsLog";
 import { cn } from "@/lib/utils";
 import { ClimbingRouteLog } from "./ClimbingRouteLog";
 import { KlatringActionPanel } from "./KlatringActionPanel";
-import { TrenerPanel } from "./TrenerPanel";
 
 type KlatringTab = "beastmaker" | "klatring" | "trener";
 
@@ -24,6 +23,8 @@ export function KlatringShell() {
   const [beastmakerRefresh, setBeastmakerRefresh] = useState(0);
   const [routesRefresh, setRoutesRefresh] = useState(0);
 
+  const isTrener = tab === "trener";
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
@@ -31,21 +32,20 @@ export function KlatringShell() {
       <main className="flex-1 overflow-hidden bg-background pt-14 md:pt-0">
         <div className="flex h-full overflow-hidden">
           <div className="flex-1 overflow-y-auto">
-            <div className="flex flex-col items-center gap-3 border-b border-border bg-background px-4 py-6 lg:hidden">
-              <PiaCoreSection compact />
-              <KlatringActionPanel
-                onBeastmakerSaved={() =>
-                  setBeastmakerRefresh((n) => n + 1)
-                }
-                onRouteSaved={() => setRoutesRefresh((n) => n + 1)}
-              />
-            </div>
+            {/* Mobile: action panel (hidden when trener active) */}
+            {!isTrener && (
+              <div className="flex flex-col items-center gap-3 border-b border-border bg-background px-4 py-6 lg:hidden">
+                <PiaCoreSection compact />
+                <KlatringActionPanel
+                  onBeastmakerSaved={() => setBeastmakerRefresh((n) => n + 1)}
+                  onRouteSaved={() => setRoutesRefresh((n) => n + 1)}
+                />
+              </div>
+            )}
 
             <div className="space-y-4 px-4 py-6 md:px-6">
               <div className="mb-4">
-                <h1 className="text-lg font-semibold text-foreground">
-                  Klatring
-                </h1>
+                <h1 className="text-lg font-semibold text-foreground">Klatring</h1>
                 <p className="text-xs text-muted-foreground">
                   Beastmaker, rutelogg og trener
                 </p>
@@ -79,20 +79,37 @@ export function KlatringShell() {
               {tab === "klatring" && (
                 <ClimbingRouteLog refreshKey={routesRefresh} />
               )}
-              {tab === "trener" && <TrenerPanel />}
+              {tab === "trener" && (
+                <PiaCoreSection
+                  chatApi="/api/trener-chat"
+                  fixedSessionId="trener_chat_permartin"
+                  labelText="TRENER"
+                  sublabelText="Klatring AI"
+                  waitingText="Trener tenker…"
+                />
+              )}
 
               <div className="h-6" />
             </div>
           </div>
 
+          {/* Desktop right panel — hide PIA orb when trener tab is active */}
           <div className="hidden w-72 shrink-0 flex-col items-center gap-4 overflow-y-auto border-l border-border bg-background px-4 py-8 lg:flex xl:w-80">
-            <PiaCoreSection compact />
-            <KlatringActionPanel
-              onBeastmakerSaved={() =>
-                setBeastmakerRefresh((n) => n + 1)
-              }
-              onRouteSaved={() => setRoutesRefresh((n) => n + 1)}
-            />
+            {isTrener ? (
+              /* When trener is active, only show the action panel — PIA orb is in the main area */
+              <KlatringActionPanel
+                onBeastmakerSaved={() => setBeastmakerRefresh((n) => n + 1)}
+                onRouteSaved={() => setRoutesRefresh((n) => n + 1)}
+              />
+            ) : (
+              <>
+                <PiaCoreSection compact />
+                <KlatringActionPanel
+                  onBeastmakerSaved={() => setBeastmakerRefresh((n) => n + 1)}
+                  onRouteSaved={() => setRoutesRefresh((n) => n + 1)}
+                />
+              </>
+            )}
           </div>
         </div>
       </main>

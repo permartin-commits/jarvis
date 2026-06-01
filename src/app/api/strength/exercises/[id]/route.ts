@@ -1,24 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import type { ExerciseRow } from "@/lib/strength";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  try {
-    const result = await query<ExerciseRow>(
-      `SELECT id, name, category, mechanics
-       FROM exercises
-       ORDER BY name ASC`
-    );
-    return NextResponse.json({ exercises: result.rows });
-  } catch (err) {
-    console.error("[strength/exercises GET]", err);
-    return NextResponse.json({ exercises: [] });
-  }
-}
-
-export async function POST(req: NextRequest) {
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const { id } = params;
   let body: unknown;
   try {
     body = await req.json();
@@ -43,16 +32,19 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await query<ExerciseRow>(
-      `INSERT INTO exercises (name, category, mechanics)
-       VALUES ($1, $2, $3)
+    const result = await query(
+      `UPDATE exercises SET name=$1, category=$2, mechanics=$3
+       WHERE id=$4
        RETURNING id, name, category, mechanics`,
-      [name, category, mechanics]
+      [name, category, mechanics, id]
     );
-    return NextResponse.json({ exercise: result.rows[0] }, { status: 201 });
+    if (result.rows.length === 0) {
+      return NextResponse.json({ error: "Ikke funnet" }, { status: 404 });
+    }
+    return NextResponse.json({ exercise: result.rows[0] });
   } catch (err) {
     const msg =
-      err instanceof Error ? err.message : "Kunne ikke lagre øvelse";
+      err instanceof Error ? err.message : "Kunne ikke oppdatere øvelse";
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

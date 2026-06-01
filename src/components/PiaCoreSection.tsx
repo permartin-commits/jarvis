@@ -62,7 +62,7 @@ type SRConstructor = new () => SR;
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const CHAT_API = "/api/pia-chat";
+const DEFAULT_CHAT_API = "/api/pia-chat";
 
 // ── TTS helpers ───────────────────────────────────────────────────────────────
 
@@ -452,10 +452,25 @@ export function PiaCoreSection({
   greeting = "",
   compact = false,
   hero = false,
+  chatApi = DEFAULT_CHAT_API,
+  fixedSessionId,
+  labelText = "PIA",
+  sublabelText = "Master OS",
+  waitingText,
 }: {
   greeting?: string;
   compact?: boolean;
   hero?: boolean;
+  /** Override the API endpoint, e.g. "/api/trener-chat" */
+  chatApi?: string;
+  /** When provided, this session ID is used permanently (no regeneration on reload). */
+  fixedSessionId?: string;
+  /** Override the label below the orb */
+  labelText?: string;
+  /** Override the sub-label (full mode only) */
+  sublabelText?: string;
+  /** Override the "thinking" loading text */
+  waitingText?: string;
 }) {
   const [input, setInput]             = useState("");
   const [messages, setMessages]       = useState<Message[]>([]);
@@ -468,6 +483,7 @@ export function PiaCoreSection({
   const [sessionId, setSessionId]       = useState("");
 
   function newSessionId(): string {
+    if (fixedSessionId) return fixedSessionId;
     return `pia_main_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   }
 
@@ -479,7 +495,7 @@ export function PiaCoreSection({
     setError(null);
     setIsListening(false);
     setIsSpeaking(false);
-    setSessionId(newSessionId());
+    if (!fixedSessionId) setSessionId(newSessionId());
   }
 
   const bottomRef      = useRef<HTMLDivElement>(null);
@@ -494,10 +510,10 @@ export function PiaCoreSection({
     }
   }, [messages, loading]);
 
-  // ── Session ID — generate once on mount ──────────────────────────────────
+  // ── Session ID — fixed or generated once on mount ────────────────────────
 
   useEffect(() => {
-    setSessionId(newSessionId());
+    setSessionId(fixedSessionId ?? newSessionId());
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -680,7 +696,7 @@ export function PiaCoreSection({
     setLoading(true);
 
     try {
-      const res = await fetch(CHAT_API, {
+      const res = await fetch(chatApi, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sporsmal: trimmed, sessionId }),
@@ -734,17 +750,17 @@ export function PiaCoreSection({
             : "text-2xl bg-gradient-to-r from-primary via-primary/60 to-primary",
           compact && "text-base !bg-gradient-to-r from-primary via-primary/60 to-primary"
         )}>
-          PIA
+          {labelText}
         </h2>
         {!compact && (
           <p className="text-[10px] tracking-[0.35em] uppercase text-muted-foreground">
-            Master OS
+            {sublabelText}
           </p>
         )}
       </div>
 
       {/* ── Greeting (full mode only) ─────────────────────────────── */}
-      {!compact && (
+      {!compact && greeting && (
         <p className="text-base font-medium text-foreground text-center">
           {greeting} Per Martin, hva vil du gjøre i dag?
         </p>
@@ -805,7 +821,7 @@ export function PiaCoreSection({
                 </div>
                 <div className="rounded-2xl rounded-bl-sm border border-border/60 bg-secondary/60 px-4 py-3 flex items-center gap-2">
                   <Loader2 className="h-3.5 w-3.5 text-primary/70 animate-spin" />
-                  <span className="text-xs text-muted-foreground">PIA tenker…</span>
+                  <span className="text-xs text-muted-foreground">{waitingText ?? `${labelText} tenker…`}</span>
                 </div>
               </div>
             )}
@@ -834,10 +850,10 @@ export function PiaCoreSection({
               isListening
                 ? "Snakker…"
                 : isSpeaking
-                ? "PIA snakker…"
+                ? `${labelText} snakker…`
                 : hasMessages
                 ? "Fortsett samtalen…"
-                : "Snakk med PIA…"
+                : `Snakk med ${labelText}…`
             }
             autoComplete="off"
             className={cn(
@@ -924,7 +940,7 @@ export function PiaCoreSection({
         {!compact && !hasMessages && (
           <p className="text-center text-[10px] text-muted-foreground">
             {isListening
-              ? "Snakker nå — klikk på orben eller mikrofon-ikonet for å stoppe"
+              ? `Snakker nå — klikk på orben eller mikrofon-ikonet for å stoppe`
               : `Klikk på orben for å snakke · Enter for å sende · Stemme ${voiceEnabled ? "på" : "av"}`}
           </p>
         )}

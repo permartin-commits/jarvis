@@ -20,13 +20,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { AppModal } from "@/components/AppModal";
 import { cn } from "@/lib/utils";
 import type { ExerciseRow, WorkoutTemplateRow } from "@/lib/strength";
 
@@ -198,19 +192,42 @@ export function FastOktEditor({
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="flex w-full flex-col gap-0 border-border bg-card p-0 sm:max-w-md"
-      >
-        <SheetHeader className="shrink-0 border-b border-border px-4 py-3">
-          <SheetTitle className="text-foreground">Rediger faste økter</SheetTitle>
-          <SheetDescription>
-            Endre navn, øvelser og antall sett for malene dine.
-          </SheetDescription>
-        </SheetHeader>
-
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 space-y-4">
+    <AppModal
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title="Rediger faste økter"
+      description="Endre navn, øvelser og antall sett for malene dine."
+      maxWidth="max-w-lg"
+      footer={
+        templates.length > 0 ? (
+          <div className="space-y-2 p-4">
+            <Button
+              className="h-9 w-full gap-2 text-xs font-semibold"
+              disabled={saving || !selectedId}
+              onClick={() => void saveTemplate()}
+            >
+              {saving ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Save className="h-3.5 w-3.5" />
+              )}
+              Lagre endringer
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-9 w-full gap-2 text-xs text-destructive hover:text-destructive"
+              disabled={saving || !selectedId}
+              onClick={() => void deleteTemplate()}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Slett mal
+            </Button>
+          </div>
+        ) : undefined
+      }
+    >
+        <div className="px-4 py-3 space-y-4">
           {loading ? (
             <div className="flex items-center justify-center gap-2 py-12 text-xs text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -400,34 +417,6 @@ export function FastOktEditor({
             </>
           )}
         </div>
-
-        {templates.length > 0 && (
-          <div className="shrink-0 space-y-2 border-t border-border p-4">
-            <Button
-              className="h-9 w-full gap-2 text-xs font-semibold"
-              disabled={saving || !selectedId}
-              onClick={() => void saveTemplate()}
-            >
-              {saving ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Save className="h-3.5 w-3.5" />
-              )}
-              Lagre endringer
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="h-9 w-full gap-2 text-xs text-destructive hover:text-destructive"
-              disabled={saving || !selectedId}
-              onClick={() => void deleteTemplate()}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Slett mal
-            </Button>
-          </div>
-        )}
-      </SheetContent>
-    </Sheet>
+    </AppModal>
   );
 }

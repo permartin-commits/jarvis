@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Dumbbell, Loader2 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -127,8 +126,7 @@ export function StrengthTrainingLog({ refreshKey = 0 }: { refreshKey?: number })
         </Select>
       </header>
 
-      <Card className="rounded-none border-0 border-t border-border bg-card">
-        <CardContent className="p-0">
+      <div>
           {loading ? (
             <div className="flex items-center justify-center gap-2 py-10 text-xs text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin text-primary/70" />
@@ -206,8 +204,7 @@ export function StrengthTrainingLog({ refreshKey = 0 }: { refreshKey?: number })
               )}
             </>
           )}
-        </CardContent>
-      </Card>
+      </div>
     </section>
     </>
   );
