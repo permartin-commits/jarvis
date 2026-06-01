@@ -4,8 +4,6 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 150;
 
 const TIMEOUT_MS = 120_000;
-const TRENER_SESSION_ID = "trener_chat_permartin";
-
 export async function POST(req: NextRequest) {
   const webhookUrl = process.env.N8N_TRENER_WEBHOOK_URL;
   if (!webhookUrl) {
@@ -22,7 +20,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Ugyldig JSON i request body." }, { status: 400 });
   }
 
-  const { sporsmal } = body as { sporsmal?: string };
+  const { sporsmal, sessionId } = body as { sporsmal?: string; sessionId?: string };
   if (!sporsmal?.trim()) {
     return NextResponse.json({ error: "sporsmal er påkrevd." }, { status: 400 });
   }
@@ -43,7 +41,7 @@ export async function POST(req: NextRequest) {
       headers,
       body: JSON.stringify({
         sporsmal: sporsmal.trim(),
-        sessionID: TRENER_SESSION_ID,
+        sessionID: sessionId ?? `trener_${Date.now()}`,
       }),
       signal: ctrl.signal,
     });

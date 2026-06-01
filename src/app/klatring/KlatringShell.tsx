@@ -82,7 +82,6 @@ export function KlatringShell() {
               {tab === "trener" && (
                 <PiaCoreSection
                   chatApi="/api/trener-chat"
-                  fixedSessionId="trener_chat_permartin"
                   labelText="TRENER"
                   sublabelText="Klatring AI"
                   waitingText="Trener tenker…"
