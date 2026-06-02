@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BrainCircuit, Loader2, MessageSquare, Coins, Hash } from "lucide-react";
+import { BrainCircuit, Loader2, Coins, Hash } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -17,16 +17,21 @@ interface DailyPoint {
 }
 
 interface AiStats {
+  // Totals
   totalCalls: number;
   totalTokens: number;
   totalTokensFmt: string;
   totalNokFmt: string;
-  last30Queries: number;
+  // This month
+  monthCalls: number;
+  monthTokensFmt: string;
+  monthNokFmt: string;
+  // Chart
   daily: DailyPoint[];
   error?: string;
 }
 
-const CHART_HEIGHT_PX = 128;
+const CHART_HEIGHT_PX = 140;
 const CHART_DAYS = 14;
 
 function formatDayLabel(iso: string): string {
@@ -35,23 +40,17 @@ function formatDayLabel(iso: string): string {
   return d.toLocaleDateString("nb-NO", { day: "2-digit", month: "short" });
 }
 
-/** Fyll siste N kalenderdager (inkl. dager uten data). */
 function buildChartSeries(daily: DailyPoint[], days: number): DailyPoint[] {
   const byDay = new Map(daily.map((d) => [d.day.slice(0, 10), d]));
   const out: DailyPoint[] = [];
   const today = new Date();
   today.setHours(12, 0, 0, 0);
-
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
     const key = d.toISOString().slice(0, 10);
     const hit = byDay.get(key);
-    out.push({
-      day: key,
-      queries: hit?.queries ?? 0,
-      costNok: hit?.costNok ?? 0,
-    });
+    out.push({ day: key, queries: hit?.queries ?? 0, costNok: hit?.costNok ?? 0 });
   }
   return out;
 }
@@ -67,37 +66,87 @@ function DailyChart({ data }: { data: DailyPoint[] }) {
     );
   }
 
-  const maxQ = Math.max(...data.map((d) => d.queries), 1);
+  const maxQ    = Math.max(...data.map((d) => d.queries), 1);
+  const maxCost = Math.max(...data.map((d) => d.costNok), 0.001);
+  const barAreaH = CHART_HEIGHT_PX - 8;
+
+  // SVG dimensions for the cost line — we calculate after bars are laid out.
+  // We use a viewBox 0 0 100 100 (%) with preserveAspectRatio=none,
+  // mapping each column centre to a normalised x position.
+  const n = data.length;
+  const points = data
+    .map((d, i) => {
+      const x = ((i + 0.5) / n) * 100;
+      const y = 100 - (d.costNok / maxCost) * 90 - 5; // 5% top padding
+      return `${x.toFixed(2)},${y.toFixed(2)}`;
+    })
+    .join(" ");
 
   return (
     <div className="space-y-2">
-      <div
-        className="flex items-end gap-1 px-1"
-        style={{ height: CHART_HEIGHT_PX }}
-      >
-        {data.map((d) => {
-          const barPx = Math.max(
-            d.queries > 0 ? 6 : 2,
-            Math.round((d.queries / maxQ) * (CHART_HEIGHT_PX - 8))
-          );
-          return (
-            <div
-              key={d.day}
-              className="group flex h-full min-w-0 flex-1 flex-col items-center justify-end"
-              title={`${formatDayLabel(d.day)}: ${d.queries} spørringer`}
-            >
+      <div className="relative px-1" style={{ height: CHART_HEIGHT_PX }}>
+        {/* Bars */}
+        <div className="flex h-full items-end gap-1">
+          {data.map((d) => {
+            const barPx = Math.max(
+              d.queries > 0 ? 6 : 2,
+              Math.round((d.queries / maxQ) * barAreaH)
+            );
+            return (
               <div
-                className={
-                  d.queries > 0
-                    ? "w-full max-w-8 rounded-t-md bg-gradient-to-t from-primary to-primary/40 transition-colors group-hover:from-palette-pink group-hover:to-primary/50"
-                    : "w-full max-w-8 rounded-t-sm bg-secondary/50"
-                }
-                style={{ height: barPx }}
+                key={d.day}
+                className="group flex h-full min-w-0 flex-1 flex-col items-center justify-end"
+                title={`${formatDayLabel(d.day)}: ${d.queries} spørringer · ${d.costNok.toLocaleString("nb-NO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kr`}
+              >
+                <div
+                  className={
+                    d.queries > 0
+                      ? "w-full max-w-8 rounded-t-md bg-gradient-to-t from-primary to-primary/40 transition-colors group-hover:from-palette-pink group-hover:to-primary/50"
+                      : "w-full max-w-8 rounded-t-sm bg-secondary/50"
+                  }
+                  style={{ height: barPx }}
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Cost line overlay */}
+        <svg
+          className="pointer-events-none absolute inset-0 h-full w-full"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <polyline
+            points={points}
+            fill="none"
+            stroke="black"
+            strokeWidth="0.8"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+            opacity="0.75"
+          />
+          {data.map((d, i) => {
+            const x = ((i + 0.5) / n) * 100;
+            const y = 100 - (d.costNok / maxCost) * 90 - 5;
+            return d.costNok > 0 ? (
+              <circle
+                key={d.day}
+                cx={x}
+                cy={y}
+                r="1"
+                fill="black"
+                opacity="0.8"
+                vectorEffect="non-scaling-stroke"
               />
-            </div>
-          );
-        })}
+            ) : null;
+          })}
+        </svg>
       </div>
+
+      {/* X-axis labels */}
       <div className="flex gap-1 px-1">
         {data.map((d) => (
           <span
@@ -108,6 +157,43 @@ function DailyChart({ data }: { data: DailyPoint[] }) {
           </span>
         ))}
       </div>
+
+      {/* Legend */}
+      <div className="flex items-center gap-4 pt-1">
+        <div className="flex items-center gap-1.5">
+          <div className="h-2.5 w-3 rounded-sm bg-gradient-to-r from-primary to-primary/40" />
+          <span className="text-[10px] text-muted-foreground">Antall spørringer</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="h-0.5 w-4 bg-black opacity-75" />
+          <span className="text-[10px] text-muted-foreground">Kostnad per dag</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatBox({
+  icon: Icon,
+  label,
+  value,
+  sub,
+}: {
+  icon: typeof BrainCircuit;
+  label: string;
+  value: string;
+  sub?: string;
+}) {
+  return (
+    <div className="rounded-xl border border-border/60 bg-secondary/25 px-4 py-3">
+      <div className="mb-2 flex items-center gap-2 text-muted-foreground">
+        <Icon className="h-3.5 w-3.5" />
+        <span className="text-[10px] font-medium uppercase tracking-wider">
+          {label}
+        </span>
+      </div>
+      <p className="text-2xl font-bold tabular-nums text-foreground">{value}</p>
+      {sub && <p className="text-[10px] text-muted-foreground">{sub}</p>}
     </div>
   );
 }
@@ -121,9 +207,7 @@ export function AiOverviewPanel() {
     fetch("/api/ai-stats", { cache: "no-store", credentials: "same-origin" })
       .then(async (r) => {
         const d = (await r.json()) as AiStats;
-        if (!r.ok) {
-          throw new Error(d.error ?? `HTTP ${r.status}`);
-        }
+        if (!r.ok) throw new Error(d.error ?? `HTTP ${r.status}`);
         setStats(d);
         setLoadError(null);
       })
@@ -139,6 +223,10 @@ export function AiOverviewPanel() {
     [stats?.daily]
   );
 
+  // Current month name
+  const monthLabel = new Date().toLocaleDateString("nb-NO", { month: "long" });
+  const monthCap   = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+
   return (
     <Card className="w-full max-w-4xl border-border bg-card text-card-foreground shadow-md ring-1 ring-border/80">
       <CardHeader className="border-b border-border pb-4">
@@ -148,10 +236,10 @@ export function AiOverviewPanel() {
           </div>
           <div>
             <CardTitle className="text-base font-semibold text-foreground">
-              AI-analyser totalt
+              AI-statistikk
             </CardTitle>
             <CardDescription className="text-xs">
-              ai_logger + PIA-chat · stolpediagram viser siste {CHART_DAYS} dager
+              ai_logger + PIA-chat · stolpediagram siste {CHART_DAYS} dager
             </CardDescription>
           </div>
         </div>
@@ -167,58 +255,64 @@ export function AiOverviewPanel() {
           <p className="py-6 text-center text-sm text-red-400">{loadError}</p>
         ) : stats ? (
           <>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-xl border border-border/60 bg-secondary/25 px-4 py-3">
-                <div className="mb-2 flex items-center gap-2 text-muted-foreground">
-                  <BrainCircuit className="h-3.5 w-3.5" />
-                  <span className="text-[10px] font-medium uppercase tracking-wider">
-                    Analyser totalt
-                  </span>
-                </div>
-                <p className="text-2xl font-bold tabular-nums text-foreground">
-                  {stats.totalCalls.toLocaleString("nb-NO")}
-                </p>
-              </div>
-              <div className="rounded-xl border border-border/60 bg-secondary/25 px-4 py-3">
-                <div className="mb-2 flex items-center gap-2 text-muted-foreground">
-                  <MessageSquare className="h-3.5 w-3.5" />
-                  <span className="text-[10px] font-medium uppercase tracking-wider">
-                    Siste 30 dager
-                  </span>
-                </div>
-                <p className="text-2xl font-bold tabular-nums text-foreground">
-                  {stats.last30Queries.toLocaleString("nb-NO")}
-                </p>
-                <p className="text-[10px] text-muted-foreground">spørringer</p>
-              </div>
-              <div className="rounded-xl border border-border/60 bg-secondary/25 px-4 py-3">
-                <div className="mb-2 flex items-center gap-2 text-muted-foreground">
-                  <Hash className="h-3.5 w-3.5" />
-                  <span className="text-[10px] font-medium uppercase tracking-wider">
-                    Tokens totalt
-                  </span>
-                </div>
-                <p className="text-2xl font-bold tabular-nums text-foreground">
-                  {stats.totalTokensFmt}
-                </p>
-                <p className="text-[10px] text-muted-foreground">pia_usage_log</p>
-              </div>
-              <div className="rounded-xl border border-border/60 bg-secondary/25 px-4 py-3">
-                <div className="mb-2 flex items-center gap-2 text-muted-foreground">
-                  <Coins className="h-3.5 w-3.5" />
-                  <span className="text-[10px] font-medium uppercase tracking-wider">
-                    Estimert kostnad
-                  </span>
-                </div>
-                <p className="text-2xl font-bold tabular-nums text-foreground">
-                  {stats.totalNokFmt}
-                </p>
+            {/* Row 1 — denne måneden */}
+            <div>
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {monthCap}
+              </p>
+              <div className="grid grid-cols-3 gap-3">
+                <StatBox
+                  icon={BrainCircuit}
+                  label="Analyser"
+                  value={stats.monthCalls.toLocaleString("nb-NO")}
+                  sub="denne måneden"
+                />
+                <StatBox
+                  icon={Hash}
+                  label="Tokens"
+                  value={stats.monthTokensFmt}
+                  sub="denne måneden"
+                />
+                <StatBox
+                  icon={Coins}
+                  label="Kostnad"
+                  value={stats.monthNokFmt}
+                  sub="denne måneden"
+                />
               </div>
             </div>
 
+            {/* Row 2 — totalt */}
+            <div>
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Totalt
+              </p>
+              <div className="grid grid-cols-3 gap-3">
+                <StatBox
+                  icon={BrainCircuit}
+                  label="Analyser"
+                  value={stats.totalCalls.toLocaleString("nb-NO")}
+                  sub="alle tider"
+                />
+                <StatBox
+                  icon={Hash}
+                  label="Tokens"
+                  value={stats.totalTokensFmt}
+                  sub="alle tider"
+                />
+                <StatBox
+                  icon={Coins}
+                  label="Kostnad"
+                  value={stats.totalNokFmt}
+                  sub="alle tider"
+                />
+              </div>
+            </div>
+
+            {/* Chart */}
             <div className="rounded-xl border border-border/60 bg-secondary/15 p-4">
               <p className="mb-3 text-xs font-medium text-muted-foreground">
-                Spørringer per dag
+                Spørringer per dag (stolper) · Kostnad per dag (linje)
               </p>
               <DailyChart data={chartData} />
             </div>

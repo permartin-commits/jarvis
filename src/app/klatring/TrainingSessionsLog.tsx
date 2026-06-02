@@ -11,6 +11,19 @@ import { cn } from "@/lib/utils";
 
 const SESSIONS_PREVIEW_COUNT = 5;
 
+function protocolLabel(protocolType: string): string {
+  const t = protocolType.toLowerCase();
+  if (t.includes("repeater")) return "Program";
+  if (t.includes("max hang") || t.includes("maxhang")) return "Maksheng";
+  return protocolType;
+}
+
+/** Extract hold size like "20mm" from a config notes line. */
+function extractHoldSize(configLine: string): string {
+  const m = configLine.match(/\d+\s*mm/i);
+  return m ? m[0].replace(/\s+/, "") : "";
+}
+
 export function TrainingSessionsLog({
   refreshKey = 0,
   onSessionUpdated,
@@ -47,37 +60,41 @@ export function TrainingSessionsLog({
   return (
     <>
       <section className="overflow-hidden rounded-xl border border-sidebar-border bg-sidebar text-sidebar-foreground">
+        {/* Header */}
         <header className="border-b border-sidebar-border px-4 py-3">
-          <h2 className="text-sm font-semibold text-sidebar-foreground">
+          <h2 className="text-base font-semibold text-white">
             Strukturerte økter
           </h2>
-          <p className="text-xs text-sidebar-foreground/50">
-            Max Hangs og andre protokoller
-          </p>
         </header>
 
+        {/* Next session suggestion */}
         {nextSuggestion && (
-          <div className="border-b border-sidebar-border bg-sidebar-accent/30 px-4 py-3">
+          <div className="border-b border-sidebar-border bg-card px-4 py-3">
             <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-primary">
               Forslag neste økt
             </p>
-            <p className="text-xs leading-relaxed text-sidebar-foreground/90">
+            <p className="text-xs leading-relaxed text-card-foreground">
               {nextSuggestion}
             </p>
           </div>
         )}
 
+        {/* Session list */}
         <div className="divide-y divide-sidebar-border/50">
           <div className="px-4 pb-1.5 pt-3">
-            <span className="text-[10px] font-medium uppercase tracking-wide text-sidebar-foreground/40">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-white">
               Siste økter
             </span>
           </div>
+
           {visibleSessions.map((s) => {
             const notes = s.notes?.trim() ?? "";
-            const configEnd = notes.indexOf("\n");
+            const newlineIdx = notes.indexOf("\n");
+            const configLine =
+              newlineIdx > -1 ? notes.slice(0, newlineIdx).trim() : "";
+            const holdSize = extractHoldSize(configLine);
             const userNote =
-              configEnd > -1 ? notes.slice(configEnd + 1).trim() : "";
+              newlineIdx > -1 ? notes.slice(newlineIdx + 1).trim() : notes;
 
             return (
               <button
@@ -89,32 +106,36 @@ export function TrainingSessionsLog({
                   "hover:bg-sidebar-accent/40 focus-visible:bg-sidebar-accent/40 focus-visible:outline-none"
                 )}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-baseline gap-2">
-                    <span className="shrink-0 font-medium text-sidebar-foreground">
-                      {s.protocol_type}
-                    </span>
-                    {userNote && (
-                      <span className="truncate text-[10px] text-sidebar-foreground/50">
-                        {userNote}
-                      </span>
-                    )}
-                  </div>
-                  <span className="shrink-0 tabular-nums text-sidebar-foreground/55">
+                <div className="flex items-baseline gap-2.5 min-w-0">
+                  {/* Date — far left, white bold */}
+                  <span className="shrink-0 font-bold text-white tabular-nums">
                     {formatTrainingSessionDate(s)}
                   </span>
+
+                  {/* Protocol name */}
+                  <span className="shrink-0 font-medium text-white/90">
+                    {protocolLabel(s.protocol_type)}
+                  </span>
+
+                  {/* Hold size only (e.g. "20mm") */}
+                  {holdSize && (
+                    <span className="shrink-0 text-white/60">
+                      {holdSize}
+                    </span>
+                  )}
+
+                  {/* User note */}
+                  {userNote && (
+                    <span className="truncate text-white/45">
+                      {userNote}
+                    </span>
+                  )}
                 </div>
-                {(s.perceived_effort != null || s.ai_session_analysis) && (
-                  <p className="mt-0.5 text-[10px] text-sidebar-foreground/50">
-                    {s.perceived_effort != null
-                      ? `RPE ${s.perceived_effort}`
-                      : ""}
-                    {s.ai_session_analysis ? " · AI" : ""}
-                  </p>
-                )}
+
               </button>
             );
           })}
+
           {hasMore && (
             <div className="px-4 py-2">
               <Button

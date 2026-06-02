@@ -36,11 +36,11 @@ const navItems = [
 function SidebarBrand() {
   return (
     <div className="flex h-16 items-center gap-2.5 px-5 shrink-0">
-      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20 ring-1 ring-primary/40">
-        <Zap className="h-4 w-4 text-primary" strokeWidth={2.5} />
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/15 ring-1 ring-white/30">
+        <Zap className="h-4 w-4 text-white" strokeWidth={2.5} />
       </div>
         <div className="flex flex-col leading-none gap-0.5">
-          <span className="font-bold tracking-wide text-foreground">PIA</span>
+          <span className="font-bold tracking-wide text-white">PIA</span>
           <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
             Dashboard
           </span>
@@ -161,10 +161,10 @@ export function Sidebar() {
       {/* ── Mobile: fixed top bar ───────────────────────────────────── */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-30 flex h-14 items-center justify-between border-b border-border bg-sidebar/95 backdrop-blur-sm px-4">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/20 ring-1 ring-primary/40">
-            <Zap className="h-3.5 w-3.5 text-primary" strokeWidth={2.5} />
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/15 ring-1 ring-white/30">
+            <Zap className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
           </div>
-          <span className="font-bold tracking-wide text-foreground text-sm">PIA</span>
+          <span className="font-bold tracking-wide text-white text-sm">PIA</span>
         </div>
         <button
           onClick={() => setMobileOpen(true)}
@@ -188,10 +188,10 @@ export function Sidebar() {
             {/* Drawer header */}
             <div className="flex items-center justify-between px-5 h-14 border-b border-border/50 shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/20 ring-1 ring-primary/40">
-                  <Zap className="h-3.5 w-3.5 text-primary" strokeWidth={2.5} />
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/15 ring-1 ring-white/30">
+                  <Zap className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
                 </div>
-                <span className="font-bold tracking-wide text-foreground text-sm">PIA</span>
+                <span className="font-bold tracking-wide text-white text-sm">PIA</span>
               </div>
               <button
                 onClick={() => setMobileOpen(false)}
