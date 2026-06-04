@@ -39,16 +39,13 @@ export function BookingsTable() {
   const [paymentFilter, setPayment]   = useState("alle");
   const [eventFilter, setEvent]       = useState("alle");
 
-  const eventOptions = [
-    "alle",
-    ...Array.from(
-      new Map(
-        bookings
-          .filter((b) => b.event_id && b.event_heading)
-          .map((b) => [b.event_id!, b.event_heading!])
-      ).entries()
-    ).map(([id, heading]) => ({ id, heading })),
-  ];
+  const eventOptions = Array.from(
+    new Map(
+      bookings
+        .filter((b) => b.event_id && b.event_heading)
+        .map((b) => [b.event_id!, b.event_heading!])
+    ).entries()
+  ).map(([id, heading]) => ({ id, heading }));
 
   const load = useCallback(() => {
     setLoading(true);
@@ -90,13 +87,10 @@ export function BookingsTable() {
           onChange={(e) => setEvent(e.target.value)}
           className="rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-xs text-zinc-300 outline-none hover:border-zinc-600"
         >
-          {eventOptions.map((opt) =>
-            opt === "alle" ? (
-              <option key="alle" value="alle">Alle kurs</option>
-            ) : (
-              <option key={opt.id} value={opt.id}>{opt.heading}</option>
-            )
-          )}
+          <option value="alle">Alle kurs</option>
+          {eventOptions.map((opt) => (
+            <option key={opt.id} value={opt.id}>{opt.heading}</option>
+          ))}
         </select>
         <button
           type="button"
