@@ -16,19 +16,21 @@ import {
   Mountain,
   Footprints,
   Grip,
+  Briefcase,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 
 const navItems = [
-  { label: "Oversikt",   href: "/",          icon: LayoutDashboard },
-  { label: "Portefølje", href: "/portefolje", icon: TrendingUp },
-  { label: "Prosjekter", href: "/prosjekter", icon: FolderKanban },
-  { label: "Run Forrest", href: "/run-forrest", icon: Footprints },
-  { label: "Klatring",    href: "/klatring",    icon: Grip },
+  { label: "Oversikt",    href: "/",            icon: LayoutDashboard },
+  { label: "Agent",       href: "/agent",       icon: BrainCircuit },
+  { label: "Business",    href: "/business",    icon: Briefcase },
   { label: "Fitness",     href: "/fitness",     icon: Dumbbell },
   { label: "Fridel",      href: "/fridel",      icon: Mountain },
-  { label: "Agent",      href: "/agent",      icon: BrainCircuit },
+  { label: "Klatring",    href: "/klatring",    icon: Grip },
+  { label: "Portefølje",  href: "/portefolje",  icon: TrendingUp },
+  { label: "Prosjekter",  href: "/prosjekter",  icon: FolderKanban },
+  { label: "Run Forrest", href: "/run-forrest", icon: Footprints },
 ];
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
