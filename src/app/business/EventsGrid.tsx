@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { MapPin, Users, TrendingUp, Clock, Loader2, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { EventRow } from "@/app/api/business/events/route";
+import { PameldteTable } from "./PameldteTable";
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("nb-NO", {
@@ -41,17 +42,31 @@ function CapacityBar({ taken, capacity }: { taken: number; capacity: number | nu
   );
 }
 
-function EventCard({ event }: { event: EventRow }) {
+function EventCard({
+  event,
+  selected,
+  onSelect,
+}: {
+  event: EventRow;
+  selected: boolean;
+  onSelect: () => void;
+}) {
   const isPublished = event.is_published;
   const isPast = new Date(event.event_date) < new Date();
   const seatsTaken = event.seats_taken ?? event.paid_count;
 
   return (
-    <div className={cn(
-      "relative flex flex-col overflow-hidden rounded-2xl border bg-zinc-900 transition-colors hover:bg-zinc-900/80",
-      isPublished ? "border-zinc-700" : "border-zinc-800 opacity-70"
-    )}>
-      {/* Top accent line */}
+    <button
+      type="button"
+      onClick={onSelect}
+      className={cn(
+        "relative flex w-full flex-col overflow-hidden rounded-2xl border bg-zinc-900 text-left transition-all",
+        selected
+          ? "border-violet-500/60 ring-1 ring-violet-500/40 shadow-[0_0_24px_-8px_rgba(139,92,246,0.45)]"
+          : "border-zinc-700 hover:border-zinc-600 hover:bg-zinc-900/80",
+        !isPublished && "opacity-70"
+      )}
+    >
       <div className={cn(
         "h-0.5 w-full",
         isPast ? "bg-zinc-700" :
@@ -60,7 +75,6 @@ function EventCard({ event }: { event: EventRow }) {
       )} />
 
       <div className="flex flex-1 flex-col gap-4 p-5">
-        {/* Header */}
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex flex-wrap items-center gap-1.5">
@@ -72,6 +86,11 @@ function EventCard({ event }: { event: EventRow }) {
               )}>
                 {isPublished ? "Publisert" : "Utkast"}
               </span>
+              {selected && (
+                <span className="inline-flex items-center rounded border border-violet-500/40 bg-violet-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-violet-300">
+                  Valgt
+                </span>
+              )}
               {isPast && (
                 <span className="inline-flex items-center rounded border border-zinc-700 bg-zinc-800 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-zinc-600">
                   Avsluttet
@@ -86,17 +105,17 @@ function EventCard({ event }: { event: EventRow }) {
             <h3 className="truncate text-sm font-semibold text-zinc-100">{event.heading}</h3>
           </div>
           <a
-            href="https://verlanse.no"
+            href="https://verlanse.no/registrer"
             target="_blank"
             rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
             className="shrink-0 rounded-lg p-1.5 text-zinc-600 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
-            title="Åpne verlanse.no"
+            title="Åpne registreringssiden"
           >
             <ExternalLink className="h-3.5 w-3.5" />
           </a>
         </div>
 
-        {/* Meta */}
         <div className="space-y-1.5 text-xs text-zinc-500">
           <div className="flex items-center gap-1.5">
             <Clock className="h-3.5 w-3.5 shrink-0 text-zinc-600" />
@@ -116,12 +135,10 @@ function EventCard({ event }: { event: EventRow }) {
           )}
         </div>
 
-        {/* Capacity bar */}
         {event.capacity != null && (
           <CapacityBar taken={seatsTaken} capacity={event.capacity} />
         )}
 
-        {/* Stats row */}
         <div className="mt-auto grid grid-cols-3 gap-2 rounded-xl border border-zinc-800 bg-zinc-950/50 p-3">
           <div className="text-center">
             <p className="text-[9px] uppercase tracking-widest text-zinc-600">Betalt</p>
@@ -144,13 +161,14 @@ function EventCard({ event }: { event: EventRow }) {
           </div>
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 
 export function EventsGrid({ preview }: { preview?: boolean }) {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/business/events")
@@ -161,6 +179,11 @@ export function EventsGrid({ preview }: { preview?: boolean }) {
   }, []);
 
   const rows = preview ? events.slice(0, 3) : events;
+  const selected = events.find((e) => e.id === selectedId) ?? null;
+
+  function handleSelect(id: string) {
+    setSelectedId((prev) => (prev === id ? null : id));
+  }
 
   return (
     <section>
@@ -186,16 +209,36 @@ export function EventsGrid({ preview }: { preview?: boolean }) {
           <p className="text-xs text-zinc-600">Ingen kurs funnet.</p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {rows.map((event) => (
-            <EventCard key={event.id} event={event} />
-          ))}
-        </div>
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {rows.map((event) => (
+              <EventCard
+                key={event.id}
+                event={event}
+                selected={selectedId === event.id}
+                onSelect={() => handleSelect(event.id)}
+              />
+            ))}
+          </div>
+
+          {!preview && selected && (
+            <PameldteTable
+              eventId={selected.id}
+              eventHeading={selected.heading}
+            />
+          )}
+        </>
       )}
 
       {preview && events.length > 3 && (
         <p className="mt-2 text-right text-[10px] text-zinc-600">
           + {events.length - 3} flere · gå til Kurs-fanen for full oversikt
+        </p>
+      )}
+
+      {!preview && !loading && events.length > 0 && !selected && (
+        <p className="mt-4 text-center text-[10px] text-zinc-600">
+          Klikk på et kurs for å se påmeldte
         </p>
       )}
     </section>

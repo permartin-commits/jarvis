@@ -4,6 +4,7 @@ import { useState } from "react";
 import { BarChart2, CalendarDays, Users, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { KpiCards } from "./KpiCards";
+import { ConsultationsTable } from "./ConsultationsTable";
 import { LeadsTable } from "./LeadsTable";
 import { BookingsTable } from "./BookingsTable";
 import { EventsGrid } from "./EventsGrid";
@@ -61,12 +62,18 @@ export function BusinessShell() {
         {tab === "oversikt" && (
           <div className="space-y-8">
             <KpiCards />
+            <ConsultationsTable preview />
             <LeadsTable preview />
             <EventsGrid preview />
           </div>
         )}
         {tab === "leads"    && <LeadsTable />}
-        {tab === "bookings" && <BookingsTable />}
+        {tab === "bookings" && (
+          <div className="space-y-10">
+            <BookingsTable />
+            <ConsultationsTable />
+          </div>
+        )}
         {tab === "events"   && <EventsGrid />}
         <div className="h-10" />
       </div>

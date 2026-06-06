@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export interface BookingRow {
   id: string;
   created_at: string;
-  participant_name: string;
+  name: string;
   company: string | null;
   email: string;
   amount_nok: number;
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
       `SELECT
          b.id,
          b.created_at,
-         b.participant_name,
+         b.name,
          b.company,
          b.email,
          b.amount_nok,

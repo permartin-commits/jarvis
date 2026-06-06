@@ -154,7 +154,7 @@ export function BookingsTable() {
                 </div>
 
                 <div className="min-w-0">
-                  <p className="truncate font-medium text-zinc-200">{b.participant_name}</p>
+                  <p className="truncate font-medium text-zinc-200">{b.name}</p>
                   {b.company && (
                     <p className="truncate text-[10px] text-zinc-600">{b.company}</p>
                   )}
