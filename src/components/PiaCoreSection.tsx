@@ -240,14 +240,21 @@ function PiaOrb({
   supported,
   size = 200,
   hero = false,
+  embedded = false,
 }: {
   isListening: boolean;
   onClick: () => void;
   supported: boolean;
   size?: number;
   hero?: boolean;
+  /** Lysere ringer/glow på mørk bakgrunn (sidebar) */
+  embedded?: boolean;
 }) {
-  const ringStroke = "var(--palette-violet)";
+  const ringStroke = embedded
+    ? isListening
+      ? "#fca5a5"
+      : "#a78bfa"
+    : "var(--palette-violet)";
 
   return (
     <button
@@ -295,7 +302,7 @@ function PiaOrb({
           background: isListening
             ? "radial-gradient(circle, rgba(239,68,68,0.35) 0%, transparent 72%)"
             : "radial-gradient(circle, var(--palette-raspberry) 0%, transparent 72%)",
-          opacity: isListening ? 0.5 : 0.45,
+          opacity: isListening ? 0.55 : embedded ? 0.65 : 0.45,
           filter: "blur(18px)",
         }}
       />
@@ -362,9 +369,9 @@ function PiaOrb({
             stroke={isListening ? "#7f1d1d" : ringStroke}
             strokeWidth="0.75"
             strokeDasharray="2 10"
-            opacity="0.55"
+            opacity={embedded ? "0.75" : "0.55"}
           />
-          <line x1="100" y1="4"   x2="100" y2="17"  stroke={isListening ? "#7f1d1d" : ringStroke} strokeWidth="1.5" opacity="0.7" />
+          <line x1="100" y1="4"   x2="100" y2="17"  stroke={isListening ? "#7f1d1d" : ringStroke} strokeWidth="1.5" opacity={embedded ? "0.9" : "0.7"} />
           <line x1="100" y1="183" x2="100" y2="196" stroke={isListening ? "#7f1d1d" : ringStroke} strokeWidth="1.5" opacity="0.7" />
           <line x1="4"   y1="100" x2="17"  y2="100" stroke={isListening ? "#7f1d1d" : ringStroke} strokeWidth="1.5" opacity="0.7" />
           <line x1="183" y1="100" x2="196" y2="100" stroke={isListening ? "#7f1d1d" : ringStroke} strokeWidth="1.5" opacity="0.7" />
@@ -452,6 +459,7 @@ export function PiaCoreSection({
   greeting = "",
   compact = false,
   hero = false,
+  embedded = false,
   chatApi = DEFAULT_CHAT_API,
   fixedSessionId,
   labelText = "PIA",
@@ -461,6 +469,8 @@ export function PiaCoreSection({
   greeting?: string;
   compact?: boolean;
   hero?: boolean;
+  /** Transparent på mørk sidebar — orb og chat uten hvit boks */
+  embedded?: boolean;
   /** Override the API endpoint, e.g. "/api/trener-chat" */
   chatApi?: string;
   /** When provided, this session ID is used permanently (no regeneration on reload). */
@@ -728,8 +738,13 @@ export function PiaCoreSection({
   return (
     <div
       className={cn(
-        "flex w-full flex-col items-center gap-6 overflow-hidden rounded-2xl bg-white",
-        compact ? "gap-4 px-4 py-5" : hero ? "px-8 py-10" : "px-6 py-8"
+        "flex w-full flex-col items-center overflow-hidden",
+        embedded
+          ? "gap-4 bg-transparent px-0 py-2"
+          : cn(
+              "gap-6 rounded-2xl bg-white",
+              compact ? "gap-4 px-4 py-5" : hero ? "px-8 py-10" : "px-6 py-8"
+            )
       )}
     >
       {/* ── Orb ──────────────────────────────────────────────────── */}
@@ -739,6 +754,7 @@ export function PiaCoreSection({
         supported={!micUnsupported}
         size={compact ? 120 : hero ? 240 : 200}
         hero={hero}
+        embedded={embedded}
       />
 
       {/* ── Label ────────────────────────────────────────────────── */}
@@ -748,7 +764,8 @@ export function PiaCoreSection({
           hero
             ? "text-3xl bg-gradient-to-r from-palette-raspberry via-primary to-palette-pink"
             : "text-2xl bg-gradient-to-r from-primary via-primary/60 to-primary",
-          compact && "text-base !bg-gradient-to-r from-primary via-primary/60 to-primary"
+          compact && !embedded && "text-base !bg-gradient-to-r from-primary via-primary/60 to-primary",
+          compact && embedded && "text-base !bg-gradient-to-r from-violet-300 via-violet-200 to-fuchsia-300"
         )}>
           {labelText}
         </h2>
@@ -796,16 +813,25 @@ export function PiaCoreSection({
                 )}
               >
                 {msg.role === "pia" && (
-                  <div className="flex-shrink-0 mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 ring-1 ring-primary/25">
-                    <BrainCircuit className="h-3.5 w-3.5 text-primary" />
+                  <div className={cn(
+                    "flex-shrink-0 mt-0.5 flex h-6 w-6 items-center justify-center rounded-full ring-1",
+                    embedded
+                      ? "bg-violet-500/15 ring-violet-500/30"
+                      : "bg-primary/15 ring-primary/25"
+                  )}>
+                    <BrainCircuit className={cn("h-3.5 w-3.5", embedded ? "text-violet-400" : "text-primary")} />
                   </div>
                 )}
                 <div
                   className={cn(
                     "rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words max-w-[85%]",
                     msg.role === "user"
-                      ? "bg-primary text-primary-foreground rounded-br-sm"
-                      : "bg-secondary/60 text-foreground border border-border/60 rounded-bl-sm"
+                      ? embedded
+                        ? "bg-violet-600/90 text-white rounded-br-sm"
+                        : "bg-primary text-primary-foreground rounded-br-sm"
+                      : embedded
+                        ? "bg-zinc-800/80 text-zinc-200 border border-zinc-700/60 rounded-bl-sm"
+                        : "bg-secondary/60 text-foreground border border-border/60 rounded-bl-sm"
                   )}
                 >
                   {msg.text}
@@ -819,9 +845,14 @@ export function PiaCoreSection({
                 <div className="flex-shrink-0 mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 ring-1 ring-primary/25">
                   <BrainCircuit className="h-3.5 w-3.5 text-primary" />
                 </div>
-                <div className="rounded-2xl rounded-bl-sm border border-border/60 bg-secondary/60 px-4 py-3 flex items-center gap-2">
-                  <Loader2 className="h-3.5 w-3.5 text-primary/70 animate-spin" />
-                  <span className="text-xs text-muted-foreground">{waitingText ?? `${labelText} tenker…`}</span>
+                <div className={cn(
+                  "rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-2",
+                  embedded
+                    ? "border border-zinc-700/60 bg-zinc-800/60"
+                    : "border border-border/60 bg-secondary/60"
+                )}>
+                  <Loader2 className={cn("h-3.5 w-3.5 animate-spin", embedded ? "text-violet-400/70" : "text-primary/70")} />
+                  <span className={cn("text-xs", embedded ? "text-zinc-500" : "text-muted-foreground")}>{waitingText ?? `${labelText} tenker…`}</span>
                 </div>
               </div>
             )}
@@ -857,15 +888,20 @@ export function PiaCoreSection({
             }
             autoComplete="off"
             className={cn(
-              "w-full rounded-full border bg-primary/5 px-5 py-3.5 text-sm outline-none ring-0 transition-colors",
-              "placeholder:text-muted-foreground/40 text-foreground",
-              // extra right padding: 3 buttons × 32px + gaps
+              "w-full rounded-full border px-5 py-3.5 text-sm outline-none ring-0 transition-colors",
+              embedded
+                ? "bg-zinc-900/80 text-zinc-100 placeholder:text-zinc-600"
+                : "bg-primary/5 placeholder:text-muted-foreground/40 text-foreground",
               micUnsupported ? "pr-[4.5rem]" : "pr-[7.5rem]",
               isListening
                 ? "border-red-500/50 bg-red-500/5 placeholder:text-red-400/50"
                 : loading
-                ? "border-primary/15 cursor-wait opacity-70"
-                : "border-primary/25 hover:border-primary/40 focus:border-primary/60"
+                ? embedded
+                  ? "border-zinc-700 cursor-wait opacity-70"
+                  : "border-primary/15 cursor-wait opacity-70"
+                : embedded
+                  ? "border-zinc-700 hover:border-zinc-600 focus:border-violet-500/50"
+                  : "border-primary/25 hover:border-primary/40 focus:border-primary/60"
             )}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {

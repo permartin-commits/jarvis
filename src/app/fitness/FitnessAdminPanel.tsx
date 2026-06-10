@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { AppModal } from "@/components/AppModal";
 import { LiveWorkoutLogger } from "./LiveWorkoutLogger";
 import { StrengthTrainingLog } from "./StrengthTrainingLog";
+import { cn } from "@/lib/utils";
 import type { ExerciseRow } from "@/lib/strength";
 
 /* ------------------------------------------------------------------ */
@@ -24,7 +25,7 @@ function blankForm(): ExerciseFormState {
   return { id: null, name: "", category: "", mechanics: "" };
 }
 
-function ExerciseManager() {
+function ExerciseManager({ dark = false }: { dark?: boolean }) {
   const [exercises, setExercises] = useState<ExerciseRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState<ExerciseFormState>(blankForm());
@@ -85,22 +86,47 @@ function ExerciseManager() {
   }
 
   return (
-    <section className="overflow-hidden rounded-xl border border-border">
-      <header className="flex items-center justify-between gap-3 border-b border-border bg-gradient-to-br from-primary/[0.06] via-card to-card px-4 py-3.5">
+    <section
+      className={cn(
+        "overflow-hidden rounded-xl border",
+        dark ? "border-zinc-800 bg-zinc-900/40" : "border-border"
+      )}
+    >
+      <header
+        className={cn(
+          "flex items-center justify-between gap-3 border-b px-4 py-3.5",
+          dark
+            ? "border-zinc-800 bg-zinc-900/60"
+            : "border-border bg-gradient-to-br from-primary/[0.06] via-card to-card"
+        )}
+      >
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 ring-1 ring-primary/25">
-            <Dumbbell className="h-4 w-4 text-primary" />
+          <div
+            className={cn(
+              "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1",
+              dark
+                ? "bg-violet-500/10 ring-violet-500/25"
+                : "bg-primary/15 ring-primary/25"
+            )}
+          >
+            <Dumbbell className={cn("h-4 w-4", dark ? "text-violet-400" : "text-primary")} />
           </div>
           <div>
-            <h2 className="text-sm font-semibold tracking-tight text-foreground">Øvelsesoversikt</h2>
-            <p className="text-xs text-muted-foreground">
+            <h2 className={cn("text-sm font-semibold tracking-tight", dark ? "text-zinc-100" : "text-foreground")}>
+              Øvelsesoversikt
+            </h2>
+            <p className={cn("text-xs", dark ? "text-zinc-500" : "text-muted-foreground")}>
               {loading ? "Laster…" : `${exercises.length} øvelser`}
             </p>
           </div>
         </div>
         <Button
           size="sm"
-          className="h-8 gap-1.5 text-xs font-semibold"
+          variant={dark ? "outline" : "default"}
+          className={cn(
+            "h-8 gap-1.5 text-xs font-semibold",
+            dark && "border-zinc-700 bg-zinc-900/60 text-zinc-200 hover:border-violet-500/35 hover:bg-zinc-800"
+          )}
           onClick={openNew}
         >
           <Plus className="h-3.5 w-3.5" />
@@ -109,41 +135,53 @@ function ExerciseManager() {
       </header>
 
       {loading ? (
-        <div className="flex items-center justify-center gap-2 py-10 text-xs text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin text-primary/70" />
+        <div className={cn("flex items-center justify-center gap-2 py-10 text-xs", dark ? "text-zinc-500" : "text-muted-foreground")}>
+          <Loader2 className={cn("h-4 w-4 animate-spin", dark ? "text-violet-400/70" : "text-primary/70")} />
           Henter øvelser…
         </div>
       ) : exercises.length === 0 ? (
-        <p className="py-10 text-center text-xs text-muted-foreground">
+        <p className={cn("py-10 text-center text-xs", dark ? "text-zinc-500" : "text-muted-foreground")}>
           Ingen øvelser ennå. Trykk «Ny øvelse» for å legge til.
         </p>
       ) : (
         <>
-          <div className="flex items-center gap-3 border-b border-border/60 bg-secondary/20 px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          <div
+            className={cn(
+              "flex items-center gap-3 border-b px-4 py-2 text-[10px] font-medium uppercase tracking-wider",
+              dark
+                ? "border-zinc-800 bg-zinc-900/60 text-zinc-600"
+                : "border-border/60 bg-secondary/20 text-muted-foreground"
+            )}
+          >
             <span className="min-w-0 flex-1">Navn</span>
             <span className="w-28 shrink-0">Kategori</span>
             <span className="hidden w-28 shrink-0 sm:inline">Mekanikk</span>
             <span className="w-8 shrink-0" />
           </div>
-          <div className="divide-y divide-border/60">
+          <div className={cn("divide-y", dark ? "divide-zinc-800/70" : "divide-border/60")}>
             {exercises.map((ex) => (
               <div
                 key={ex.id}
                 className="flex items-center gap-3 px-4 py-2.5"
               >
-                <p className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
+                <p className={cn("min-w-0 flex-1 truncate text-xs font-medium", dark ? "text-zinc-200" : "text-foreground")}>
                   {ex.name}
                 </p>
-                <span className="w-28 shrink-0 truncate text-xs text-muted-foreground">
+                <span className={cn("w-28 shrink-0 truncate text-xs", dark ? "text-zinc-500" : "text-muted-foreground")}>
                   {ex.category}
                 </span>
-                <span className="hidden w-28 shrink-0 truncate text-xs text-muted-foreground sm:inline">
+                <span className={cn("hidden w-28 shrink-0 truncate text-xs sm:inline", dark ? "text-zinc-500" : "text-muted-foreground")}>
                   {ex.mechanics ?? "—"}
                 </span>
                 <button
                   type="button"
                   onClick={() => openEdit(ex)}
-                  className="w-8 shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                  className={cn(
+                    "w-8 shrink-0 rounded p-1 transition-colors",
+                    dark
+                      ? "text-zinc-600 hover:bg-zinc-800 hover:text-zinc-300"
+                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  )}
                   aria-label={`Rediger ${ex.name}`}
                 >
                   <Pencil className="h-3.5 w-3.5" />
@@ -236,9 +274,10 @@ function ExerciseManager() {
 interface FitnessAdminPanelProps {
   refreshKey?: number;
   onWorkoutSaved?: () => void;
+  dark?: boolean;
 }
 
-export function FitnessAdminPanel({ refreshKey = 0, onWorkoutSaved }: FitnessAdminPanelProps) {
+export function FitnessAdminPanel({ refreshKey = 0, onWorkoutSaved, dark = false }: FitnessAdminPanelProps) {
   const [logOpen, setLogOpen] = useState(false);
   const [templateVersion] = useState(0);
   const [innerRefresh, setInnerRefresh] = useState(0);
@@ -253,11 +292,16 @@ export function FitnessAdminPanel({ refreshKey = 0, onWorkoutSaved }: FitnessAdm
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-semibold text-foreground">Admin</h2>
-          <p className="text-xs text-muted-foreground">Øvelser og økt-historikk</p>
+          <h2 className={cn("text-sm font-semibold", dark ? "text-zinc-100" : "text-foreground")}>Admin</h2>
+          <p className={cn("text-xs", dark ? "text-zinc-500" : "text-muted-foreground")}>Øvelser og økt-historikk</p>
         </div>
         <Button
-          className="h-9 gap-2 text-xs font-semibold"
+          variant={dark ? "outline" : "default"}
+          className={cn(
+            "h-9 gap-2 text-xs font-semibold",
+            dark &&
+              "border-zinc-700/80 bg-zinc-900/60 text-zinc-200 shadow-none hover:border-violet-500/35 hover:bg-zinc-800 hover:text-violet-100"
+          )}
           onClick={() => setLogOpen(true)}
         >
           <Plus className="h-3.5 w-3.5" />
@@ -265,9 +309,9 @@ export function FitnessAdminPanel({ refreshKey = 0, onWorkoutSaved }: FitnessAdm
         </Button>
       </div>
 
-      <StrengthTrainingLog refreshKey={refreshKey + innerRefresh} />
+      <StrengthTrainingLog refreshKey={refreshKey + innerRefresh} dark={dark} />
 
-      <ExerciseManager />
+      <ExerciseManager dark={dark} />
 
       <AppModal
         open={logOpen}

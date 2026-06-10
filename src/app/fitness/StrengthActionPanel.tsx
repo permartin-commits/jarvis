@@ -7,6 +7,10 @@ import { Separator } from "@/components/ui/separator";
 import { AppModal } from "@/components/AppModal";
 import { LiveWorkoutLogger } from "./LiveWorkoutLogger";
 import { FastOktEditor } from "./FastOktEditor";
+import {
+  FITNESS_PANEL_BUTTON_CLASS,
+  FITNESS_PANEL_BUTTON_SECONDARY_CLASS,
+} from "./fitness-panel-buttons";
 
 interface StrengthActionPanelProps {
   onWorkoutSaved?: () => void;
@@ -19,15 +23,17 @@ export function StrengthActionPanel({ onWorkoutSaved }: StrengthActionPanelProps
 
   return (
     <div className="w-full space-y-3">
-      <Separator className="bg-border/80" />
+      <Separator className="bg-zinc-800" />
 
       <div className="w-full space-y-2">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
           Styrke
         </p>
 
         <Button
-          className="h-10 w-full gap-2 text-sm font-semibold shadow-sm"
+          type="button"
+          variant="outline"
+          className={FITNESS_PANEL_BUTTON_CLASS}
           onClick={() => setOpen(true)}
         >
           <Plus className="h-4 w-4" />
@@ -37,7 +43,7 @@ export function StrengthActionPanel({ onWorkoutSaved }: StrengthActionPanelProps
         <Button
           type="button"
           variant="outline"
-          className="h-10 w-full gap-2 text-sm font-medium"
+          className={FITNESS_PANEL_BUTTON_SECONDARY_CLASS}
           onClick={() => setEditorOpen(true)}
         >
           <Pencil className="h-4 w-4" />

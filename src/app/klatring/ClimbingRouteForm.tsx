@@ -315,6 +315,7 @@ export function ClimbingRouteRegisterButton({
     <>
       <Button
         type="button"
+        variant="outline"
         className={KLATRING_PANEL_BUTTON_CLASS}
         onClick={() => setOpen(true)}
       >

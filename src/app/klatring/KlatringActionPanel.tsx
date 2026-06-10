@@ -17,7 +17,7 @@ export function KlatringActionPanel({
 }: KlatringActionPanelProps) {
   return (
     <div className="w-full space-y-3">
-      <Separator className="bg-border/80" />
+      <Separator className="bg-zinc-800" />
 
       <MaxHangsStartButton onSessionSaved={onBeastmakerSaved} />
       <RepeatersStartButton onSessionSaved={onBeastmakerSaved} />

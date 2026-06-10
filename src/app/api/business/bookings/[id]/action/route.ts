@@ -9,13 +9,13 @@ export const dynamic = "force-dynamic";
 
 type Action = "confirm" | "reject" | "confirm_reschedule";
 
-interface ConsultationDbRow {
+interface BookingDbRow {
   id: string;
   name: string;
   email: string;
   company: string | null;
-  requested_date: string;
-  requested_time: string;
+  requested_date: string | null;
+  requested_time: string | null;
   message: string | null;
   status: string;
   event_id: string | null;
@@ -23,27 +23,27 @@ interface ConsultationDbRow {
 }
 
 function buildWebhookPayload(
-  consultation: ConsultationDbRow,
+  booking: BookingDbRow,
   action: ConsultationWebhookPayload["action"],
   requested_date: string,
   requested_time: string
 ): ConsultationWebhookPayload {
-  const originalDate = consultation.requested_date.slice(0, 10);
-  const originalTime = consultation.requested_time.slice(0, 5);
+  const originalDate = booking.requested_date?.slice(0, 10) ?? requested_date;
+  const originalTime = booking.requested_time?.slice(0, 5) ?? requested_time;
 
   return {
     action,
-    consultation_id: consultation.id,
-    name: consultation.name,
-    email: consultation.email,
-    company: consultation.company,
-    message: consultation.message,
+    consultation_id: booking.id,
+    name: booking.name,
+    email: booking.email,
+    company: booking.company,
+    message: booking.message,
     requested_date,
     requested_time,
     original_date: originalDate,
     original_time: originalTime,
-    event_id: consultation.event_id,
-    event_heading: consultation.event_heading,
+    event_id: booking.event_id,
+    event_heading: booking.event_heading,
     rescheduled: action === "confirm_reschedule",
   };
 }
@@ -78,39 +78,39 @@ export async function POST(
     );
   }
 
-  let consultation: ConsultationDbRow;
+  let booking: BookingDbRow;
   try {
-    const result = await query<ConsultationDbRow>(
+    const result = await query<BookingDbRow>(
       `SELECT
-         c.id,
-         c.name,
-         c.email,
-         c.company,
-         c.requested_date::text AS requested_date,
-         c.requested_time::text AS requested_time,
-         c.message,
-         c.status,
-         c.event_id,
-         e.heading AS event_heading
-       FROM consultations c
-       LEFT JOIN events e ON e.id = c.event_id
-       WHERE c.id = $1`,
+         b.id,
+         b.name,
+         b.email,
+         b.company,
+         b.requested_date::text AS requested_date,
+         b.requested_time::text AS requested_time,
+         b.message,
+         b.status,
+         b.event_id,
+         COALESCE(b.event_heading, e.heading) AS event_heading
+       FROM bookings b
+       LEFT JOIN events e ON e.id = b.event_id
+       WHERE b.id = $1`,
       [id]
     );
     if (result.rows.length === 0) {
-      return NextResponse.json({ error: "Konsultasjon ikke funnet" }, { status: 404 });
+      return NextResponse.json({ error: "Booking ikke funnet" }, { status: 404 });
     }
-    consultation = result.rows[0];
+    booking = result.rows[0];
   } catch (err) {
-    console.error("[consultations/action] db fetch", err);
+    console.error("[bookings/action] db fetch", err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Databasefeil" },
       { status: 500 }
     );
   }
 
-  const originalDate = consultation.requested_date.slice(0, 10);
-  const originalTime = consultation.requested_time.slice(0, 5);
+  const originalDate = booking.requested_date?.slice(0, 10) ?? "";
+  const originalTime = booking.requested_time?.slice(0, 5) ?? "";
 
   let webhookAction: ConsultationWebhookPayload["action"];
   let finalDate: string;
@@ -119,8 +119,8 @@ export async function POST(
 
   if (action === "reject") {
     webhookAction = "cancelled";
-    finalDate = originalDate;
-    finalTime = originalTime;
+    finalDate = originalDate || requested_date || new Date().toISOString().slice(0, 10);
+    finalTime = originalTime || requested_time || "09:00";
     nextStatus = "cancelled";
   } else if (action === "confirm_reschedule") {
     webhookAction = "confirm_reschedule";
@@ -129,13 +129,13 @@ export async function POST(
     nextStatus = "confirmed";
   } else {
     webhookAction = "confirm";
-    finalDate = originalDate;
-    finalTime = originalTime;
+    finalDate = originalDate || requested_date || new Date().toISOString().slice(0, 10);
+    finalTime = originalTime || requested_time || "09:00";
     nextStatus = "confirmed";
   }
 
   const webhook = await callConsultationWebhook(
-    buildWebhookPayload(consultation, webhookAction, finalDate, finalTime)
+    buildWebhookPayload(booking, webhookAction, finalDate, finalTime)
   );
 
   if (!webhook.ok) {
@@ -147,15 +147,16 @@ export async function POST(
 
   try {
     await query(
-      `UPDATE consultations
+      `UPDATE bookings
        SET status = $2,
            requested_date = $3::date,
-           requested_time = $4::time
+           requested_time = $4::time,
+           updated_at = now()
        WHERE id = $1`,
       [id, nextStatus, finalDate, finalTime]
     );
   } catch (err) {
-    console.error("[consultations/action] db update", err);
+    console.error("[bookings/action] db update", err);
     return NextResponse.json(
       {
         ok: false,

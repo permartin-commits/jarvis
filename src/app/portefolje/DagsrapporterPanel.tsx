@@ -35,7 +35,7 @@ function typeBadgeClass(type: string): string {
   if (t.includes("uke") || t.includes("weekly")) {
     return "bg-amber-500/15 text-amber-400 border-amber-500/30";
   }
-  return "bg-secondary/40 text-muted-foreground border-border";
+  return "bg-zinc-800/60 text-zinc-500 border-zinc-700";
 }
 
 function loadRapporter(): Promise<Dagsrapport[]> {
@@ -56,14 +56,14 @@ function DetailField({
 }) {
   return (
     <div className="space-y-1.5">
-      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-500">
         {label}
       </p>
       <p
         className={cn(
-          "text-sm text-foreground",
+          "text-sm text-zinc-200",
           multiline &&
-            "max-h-56 overflow-y-auto whitespace-pre-wrap rounded-md border border-border/60 bg-secondary/20 p-3 leading-relaxed"
+            "max-h-56 overflow-y-auto whitespace-pre-wrap rounded-md border border-zinc-800 bg-zinc-900/60 p-3 leading-relaxed"
         )}
       >
         {value?.trim() ? value : "—"}
@@ -94,17 +94,17 @@ export function DagsrapporterPanel() {
 
   return (
     <>
-      <div className="w-full overflow-hidden rounded-xl border border-border bg-card/80">
-        <div className="border-b border-border bg-gradient-to-br from-primary/[0.06] via-card to-card px-3 py-2.5">
+      <div className="w-full overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/40">
+        <div className="border-b border-zinc-800 bg-zinc-900/60 px-3 py-2.5">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/15 ring-1 ring-primary/25">
-              <FileText className="h-3.5 w-3.5 text-primary" />
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-500/10 ring-1 ring-violet-500/25">
+              <FileText className="h-3.5 w-3.5 text-violet-400" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-foreground">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-100">
                 Morgenrapport
               </p>
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-[10px] text-zinc-500">
                 {loading ? "Laster…" : `${rapporter.length} i dagsrapporter`}
               </p>
             </div>
@@ -112,30 +112,30 @@ export function DagsrapporterPanel() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center gap-2 py-8 text-xs text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin text-primary/70" />
+          <div className="flex items-center justify-center gap-2 py-8 text-xs text-zinc-500">
+            <Loader2 className="h-4 w-4 animate-spin text-violet-400/70" />
             Henter…
           </div>
         ) : rapporter.length === 0 ? (
-          <p className="px-3 py-8 text-center text-[11px] text-muted-foreground">
+          <p className="px-3 py-8 text-center text-[11px] text-zinc-500">
             Ingen rader i dagsrapporter ennå.
           </p>
         ) : (
           <>
-            <div className="flex items-center gap-2 border-b border-border/60 bg-secondary/20 px-3 py-1.5 text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
+            <div className="flex items-center gap-2 border-b border-zinc-800 bg-zinc-900/60 px-3 py-1.5 text-[9px] font-medium uppercase tracking-wider text-zinc-600">
               <span className="w-[4.5rem] shrink-0">Dato</span>
               <span className="min-w-0 flex-1">Type</span>
             </div>
 
-            <div className="divide-y divide-border/60">
+            <div className="divide-y divide-zinc-800/70">
               {visible.map((r) => (
                 <button
                   key={r.id}
                   type="button"
                   onClick={() => setSelected(r)}
-                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-secondary/30"
+                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-zinc-800/40"
                 >
-                  <span className="w-[4.5rem] shrink-0 text-[10px] tabular-nums text-muted-foreground">
+                  <span className="w-[4.5rem] shrink-0 text-[10px] tabular-nums text-zinc-500">
                     {formatDato(r.dato)}
                   </span>
                   <span
@@ -151,11 +151,11 @@ export function DagsrapporterPanel() {
             </div>
 
             {hasMore && (
-              <div className="border-t border-border/60 px-3 py-2">
+              <div className="border-t border-zinc-800/70 px-3 py-2">
                 <button
                   type="button"
                   onClick={() => setShowAll((v) => !v)}
-                  className="w-full rounded-md border border-border bg-secondary/20 py-1.5 text-[10px] font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
+                  className="w-full rounded-md border border-zinc-700 bg-zinc-900/60 py-1.5 text-[10px] font-medium text-zinc-500 transition-colors hover:border-violet-500/30 hover:text-zinc-300"
                 >
                   {showAll
                     ? "Vis færre"
@@ -173,14 +173,14 @@ export function DagsrapporterPanel() {
           if (!open) setSelected(null);
         }}
       >
-        <DialogContent className="max-h-[min(90vh,640px)] gap-0 overflow-hidden border-border bg-card p-0 sm:max-w-lg">
+        <DialogContent className="max-h-[min(90vh,640px)] gap-0 overflow-hidden border-zinc-800 bg-zinc-950 p-0 sm:max-w-lg">
           {selected && (
             <>
-              <DialogHeader className="border-b border-border bg-gradient-to-br from-primary/[0.06] via-card to-card px-5 py-4">
-                <DialogTitle className="text-base font-semibold text-foreground">
+              <DialogHeader className="border-b border-zinc-800 bg-zinc-900/60 px-5 py-4">
+                <DialogTitle className="text-base font-semibold text-zinc-100">
                   {formatRapportType(selected.type)}
                 </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground">
+                <DialogDescription className="text-xs text-zinc-500">
                   {formatDato(selected.dato)}
                 </DialogDescription>
               </DialogHeader>

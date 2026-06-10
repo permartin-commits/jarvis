@@ -4,7 +4,6 @@ import { useState } from "react";
 import { BarChart2, CalendarDays, Users, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { KpiCards } from "./KpiCards";
-import { ConsultationsTable } from "./ConsultationsTable";
 import { LeadsTable } from "./LeadsTable";
 import { BookingsTable } from "./BookingsTable";
 import { EventsGrid } from "./EventsGrid";
@@ -23,7 +22,6 @@ export function BusinessShell() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      {/* Top header */}
       <header className="shrink-0 border-b border-zinc-800 bg-zinc-950 px-6 py-4">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -35,7 +33,6 @@ export function BusinessShell() {
             </p>
           </div>
 
-          {/* Tab bar */}
           <nav className="flex gap-1 rounded-xl border border-zinc-800 bg-zinc-900 p-1">
             {TABS.map(({ id, label, icon: Icon }) => (
               <button
@@ -57,23 +54,17 @@ export function BusinessShell() {
         </div>
       </header>
 
-      {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto px-6 py-6">
         {tab === "oversikt" && (
           <div className="space-y-8">
             <KpiCards />
-            <ConsultationsTable preview />
+            <BookingsTable preview />
             <LeadsTable preview />
             <EventsGrid preview />
           </div>
         )}
         {tab === "leads"    && <LeadsTable />}
-        {tab === "bookings" && (
-          <div className="space-y-10">
-            <BookingsTable />
-            <ConsultationsTable />
-          </div>
-        )}
+        {tab === "bookings" && <BookingsTable />}
         {tab === "events"   && <EventsGrid />}
         <div className="h-10" />
       </div>

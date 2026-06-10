@@ -146,11 +146,13 @@ function StravaHeaderStat({
   label,
   value,
   loading,
+  dark = false,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   loading?: boolean;
+  dark?: boolean;
 }) {
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-0.5 rounded-lg border border-orange-500/15 bg-orange-500/[0.06] px-2.5 py-2 sm:px-3">
@@ -162,7 +164,8 @@ function StravaHeaderStat({
       </div>
       <p
         className={cn(
-          "text-sm font-bold tabular-nums text-foreground sm:text-base",
+          "text-sm font-bold tabular-nums sm:text-base",
+          dark ? "text-zinc-100" : "text-foreground",
           loading && "animate-pulse text-muted-foreground/40"
         )}
       >
@@ -408,7 +411,7 @@ const PREVIEW_COUNT = 5;
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function StravaLog() {
+export function StravaLog({ dark = false }: { dark?: boolean }) {
   const [activities, setActivities]     = useState<StravaActivity[]>([]);
   const [selected, setSelected]         = useState<StravaActivity | null>(null);
   const [loading, setLoading]           = useState(true);
@@ -441,7 +444,12 @@ export function StravaLog() {
   const latestProgresjon = latestActivity?.progresjonsanalyse?.trim() ?? "";
 
   return (
-    <div className="rounded-xl border border-border overflow-hidden">
+    <div
+      className={cn(
+        "overflow-hidden rounded-xl border",
+        dark ? "border-zinc-800 bg-zinc-900/40" : "border-border"
+      )}
+    >
 
       {selected && (
         <DetailModal activity={selected} onClose={() => setSelected(null)} />
@@ -451,13 +459,22 @@ export function StravaLog() {
         <GoalModal onClose={() => setShowGoalModal(false)} />
       )}
 
-      <header className="border-b border-border bg-gradient-to-br from-orange-500/[0.07] via-card to-card px-4 py-4">
+      <header
+        className={cn(
+          "border-b px-4 py-4",
+          dark
+            ? "border-zinc-800 bg-zinc-900/60"
+            : "border-border bg-gradient-to-br from-orange-500/[0.07] via-card to-card"
+        )}
+      >
         <div className="flex items-start gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-500/15 ring-1 ring-orange-500/25 shadow-sm shadow-orange-500/10">
             <Activity className="h-4 w-4 text-orange-400" />
           </div>
           <div className="min-w-0 flex-1 pt-0.5">
-            <h2 className="text-sm font-semibold tracking-tight text-foreground">Strava</h2>
+            <h2 className={cn("text-sm font-semibold tracking-tight", dark ? "text-zinc-100" : "text-foreground")}>
+              Strava
+            </h2>
           </div>
           <button
             type="button"
@@ -475,26 +492,29 @@ export function StravaLog() {
             label="Totale KM"
             value={summary.totalKmFmt === "—" ? summary.totalKmFmt : `${summary.totalKmFmt} km`}
             loading={loading}
+            dark={dark}
           />
           <StravaHeaderStat
             icon={<Hash className="h-3 w-3 shrink-0" />}
             label="Antall aktivitet"
             value={String(summary.count)}
             loading={loading}
+            dark={dark}
           />
           <StravaHeaderStat
             icon={<Zap className="h-3 w-3 shrink-0" />}
             label="Snitt tempo"
             value={summary.avgPaceFmt}
             loading={loading}
+            dark={dark}
           />
         </div>
       </header>
 
-      <div className="border-t border-border">
-          <Card className="rounded-none border-0 bg-card overflow-hidden">
+      <div className={cn("border-t", dark ? "border-zinc-800" : "border-border")}>
+          <Card className={cn("rounded-none border-0 overflow-hidden", dark ? "bg-transparent" : "bg-card")}>
             {loading ? (
-              <CardContent className="py-10 text-center text-xs text-muted-foreground">
+              <CardContent className={cn("py-10 text-center text-xs", dark ? "text-zinc-500" : "text-muted-foreground")}>
                 Laster aktiviteter…
               </CardContent>
             ) : activities.length === 0 ? (
@@ -503,8 +523,10 @@ export function StravaLog() {
                   <Activity className="h-5 w-5 text-orange-400/40" />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-foreground/70">Ingen aktiviteter ennå</p>
-                  <p className="text-xs text-muted-foreground max-w-xs">
+                  <p className={cn("text-sm font-medium", dark ? "text-zinc-400" : "text-foreground/70")}>
+                    Ingen aktiviteter ennå
+                  </p>
+                  <p className={cn("text-xs max-w-xs", dark ? "text-zinc-600" : "text-muted-foreground")}>
                     Koble til Strava via n8n og push data til <code className="font-mono">Strava</code>-tabellen i Supabase.
                   </p>
                 </div>
@@ -512,8 +534,14 @@ export function StravaLog() {
             ) : (
               <CardContent className="p-0">
 
-                {/* Progresjonsanalyse — siste aktivitet */}
-                <div className="border-b border-border/60 bg-gradient-to-r from-orange-500/[0.06] to-transparent px-4 py-3.5">
+                <div
+                  className={cn(
+                    "border-b px-4 py-3.5",
+                    dark
+                      ? "border-zinc-800 bg-orange-500/[0.04]"
+                      : "border-border/60 bg-gradient-to-r from-orange-500/[0.06] to-transparent"
+                  )}
+                >
                   <div className="flex gap-3">
                     <TrendingUp className="mt-0.5 h-4 w-4 shrink-0 text-orange-400/80" />
                     <div className="min-w-0 flex-1 space-y-1">
@@ -521,18 +549,18 @@ export function StravaLog() {
                         Progresjonsanalyse
                       </p>
                       {latestProgresjon ? (
-                        <p className="text-sm leading-relaxed text-foreground/85 whitespace-pre-wrap">
+                        <p className={cn("text-sm leading-relaxed whitespace-pre-wrap", dark ? "text-zinc-300" : "text-foreground/85")}>
                           {latestProgresjon}
                         </p>
                       ) : (
-                        <p className="text-xs italic text-muted-foreground/70">
+                        <p className={cn("text-xs italic", dark ? "text-zinc-600" : "text-muted-foreground/70")}>
                           {latestActivity
                             ? "Ingen progresjonsanalyse for siste aktivitet ennå."
                             : "Ingen aktiviteter å analysere."}
                         </p>
                       )}
                       {latestActivity && (
-                        <p className="text-[10px] text-muted-foreground/60">
+                        <p className={cn("text-[10px]", dark ? "text-zinc-600" : "text-muted-foreground/60")}>
                           Siste: {latestActivity.navn ?? latestActivity.type ?? "Aktivitet"}
                           {" · "}
                           {formatDate(latestActivity.dato)}
@@ -542,21 +570,33 @@ export function StravaLog() {
                   </div>
                 </div>
 
-                {/* Forslag til neste aktivitet */}
                 {forslag && (
-                  <div className="flex gap-3 px-4 py-3.5 border-b border-border/60 bg-primary/5">
-                    <Lightbulb className="h-4 w-4 text-primary/70 shrink-0 mt-0.5" />
+                  <div
+                    className={cn(
+                      "flex gap-3 border-b px-4 py-3.5",
+                      dark
+                        ? "border-zinc-800 bg-violet-500/[0.06]"
+                        : "border-border/60 bg-primary/5"
+                    )}
+                  >
+                    <Lightbulb className={cn("h-4 w-4 shrink-0 mt-0.5", dark ? "text-violet-400/70" : "text-primary/70")} />
                     <div className="space-y-0.5">
-                      <p className="text-[10px] font-semibold uppercase tracking-widest text-primary/70">
+                      <p className={cn("text-[10px] font-semibold uppercase tracking-widest", dark ? "text-violet-400/80" : "text-primary/70")}>
                         Forslag til neste aktivitet
                       </p>
-                      <p className="text-sm text-foreground/85 leading-relaxed">{forslag}</p>
+                      <p className={cn("text-sm leading-relaxed", dark ? "text-zinc-300" : "text-foreground/85")}>{forslag}</p>
                     </div>
                   </div>
                 )}
 
-                {/* Table header */}
-                <div className="flex items-center gap-3 px-4 py-2 bg-secondary/20 border-b border-border/60 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                <div
+                  className={cn(
+                    "flex items-center gap-3 border-b px-4 py-2 text-[10px] font-medium uppercase tracking-wider",
+                    dark
+                      ? "border-zinc-800 bg-zinc-900/60 text-zinc-600"
+                      : "border-border/60 bg-secondary/20 text-muted-foreground"
+                  )}
+                >
                   <span className="w-5 shrink-0" />
                   <span className="flex-1">Aktivitet</span>
                   <span className="w-16 text-right shrink-0">Distanse</span>
@@ -564,29 +604,31 @@ export function StravaLog() {
                   <span className="w-20 text-right shrink-0">Dato</span>
                 </div>
 
-                {/* Table rows */}
-                <div className="divide-y divide-border/60">
+                <div className={cn("divide-y", dark ? "divide-zinc-800/70" : "divide-border/60")}>
                   {visibleActivities.map((a) => (
                     <button
                       key={a.id}
                       type="button"
                       onClick={() => setSelected(a)}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/30 transition-colors text-left"
+                      className={cn(
+                        "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
+                        dark ? "hover:bg-zinc-800/40" : "hover:bg-secondary/30"
+                      )}
                     >
                       <span className="w-5 shrink-0 text-base leading-none">{activityIcon(a.type)}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-foreground truncate">
+                      <div className="min-w-0 flex-1">
+                        <p className={cn("truncate text-xs font-medium", dark ? "text-zinc-200" : "text-foreground")}>
                           {a.navn ?? a.type ?? "Aktivitet"}
                         </p>
-                        <p className="text-[10px] text-muted-foreground capitalize">{a.type ?? ""}</p>
+                        <p className={cn("text-[10px] capitalize", dark ? "text-zinc-600" : "text-muted-foreground")}>{a.type ?? ""}</p>
                       </div>
-                      <span className={cn("w-16 text-right text-xs tabular-nums shrink-0", a.distanse_km ? "text-foreground" : "text-muted-foreground")}>
+                      <span className={cn("w-16 shrink-0 text-right text-xs tabular-nums", a.distanse_km ? (dark ? "text-zinc-300" : "text-foreground") : (dark ? "text-zinc-600" : "text-muted-foreground"))}>
                         {a.distanse_km ? `${Number(a.distanse_km).toFixed(1)} km` : "—"}
                       </span>
-                      <span className="hidden sm:block w-14 text-right text-xs tabular-nums text-muted-foreground shrink-0">
+                      <span className={cn("hidden w-14 shrink-0 text-right text-xs tabular-nums sm:block", dark ? "text-zinc-500" : "text-muted-foreground")}>
                         {a.varighet_sekunder ? formatDuration(a.varighet_sekunder) : "—"}
                       </span>
-                      <span className="w-20 text-right text-[10px] text-muted-foreground/70 shrink-0">
+                      <span className={cn("w-20 shrink-0 text-right text-[10px]", dark ? "text-zinc-600" : "text-muted-foreground/70")}>
                         {formatDate(a.dato)}
                       </span>
                     </button>
@@ -594,11 +636,16 @@ export function StravaLog() {
                 </div>
 
                 {hasMore && (
-                  <div className="border-t border-border/60 px-4 py-3">
+                  <div className={cn("border-t px-4 py-3", dark ? "border-zinc-800/70" : "border-border/60")}>
                     <button
                       type="button"
                       onClick={() => setShowAll((v) => !v)}
-                      className="w-full rounded-md border border-border bg-secondary/20 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
+                      className={cn(
+                        "w-full rounded-md border py-2 text-xs font-medium transition-colors",
+                        dark
+                          ? "border-zinc-700 bg-zinc-900/60 text-zinc-500 hover:border-violet-500/30 hover:text-zinc-300"
+                          : "border-border bg-secondary/20 text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                      )}
                     >
                       {showAll
                         ? "Vis færre"

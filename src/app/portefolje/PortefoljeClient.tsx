@@ -57,11 +57,11 @@ function HoldingCard({ h }: { h: EnrichedHolding }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="border-b border-border/60 last:border-0">
+    <div className="border-b border-zinc-800/60 last:border-0">
       <button
         type="button"
         onClick={() => setExpanded((o) => !o)}
-        className="w-full text-left px-4 py-3.5 hover:bg-secondary/30 transition-colors grid gap-x-3 gap-y-1"
+        className="w-full text-left px-4 py-3.5 hover:bg-zinc-800/40 transition-colors grid gap-x-3 gap-y-1"
         style={{
           gridTemplateColumns:
             "minmax(80px,1fr) minmax(80px,1fr) repeat(4,minmax(60px,1fr)) minmax(100px,1fr) 24px",
@@ -70,11 +70,11 @@ function HoldingCard({ h }: { h: EnrichedHolding }) {
       >
         {/* Ticker / Selskapsnavn */}
         <div className="flex items-center gap-2 min-w-0">
-          <div className="flex h-7 w-12 items-center justify-center rounded bg-primary/10 text-xs font-bold text-primary shrink-0">
+          <div className="flex h-7 w-12 items-center justify-center rounded bg-violet-500/10 text-xs font-bold text-violet-400 shrink-0">
             {h.ticker.slice(0, 5)}
           </div>
           {h.selskapsnavn && (
-            <p className="text-sm font-bold text-foreground leading-tight truncate">
+            <p className="text-sm font-bold text-zinc-100 leading-tight truncate">
               {h.selskapsnavn}
             </p>
           )}
@@ -82,25 +82,25 @@ function HoldingCard({ h }: { h: EnrichedHolding }) {
 
         {/* Investert */}
         <div>
-          <p className="text-xs text-muted-foreground">Investert</p>
-          <p className="text-sm font-semibold tabular-nums text-foreground">
+          <p className="text-xs text-zinc-500">Investert</p>
+          <p className="text-sm font-semibold tabular-nums text-zinc-100">
             {fmt(h.investert)} kr
           </p>
         </div>
 
         {/* Avkastning — green/red, max 2 dec */}
         <div>
-          <p className="text-xs text-muted-foreground">Avkastning</p>
+          <p className="text-xs text-zinc-500">Avkastning</p>
           <p
             className={cn(
               "text-sm font-semibold tabular-nums",
               h.avkastning == null
-                ? "text-muted-foreground"
+                ? "text-zinc-500"
                 : h.avkastning > 0
                 ? "text-emerald-400"
                 : h.avkastning < 0
                 ? "text-red-400"
-                : "text-muted-foreground"
+                : "text-zinc-500"
             )}
           >
             {h.avkastning == null
@@ -111,23 +111,23 @@ function HoldingCard({ h }: { h: EnrichedHolding }) {
 
         {/* Target */}
         <div>
-          <p className="text-xs text-muted-foreground">Target</p>
-          <p className="text-sm font-semibold tabular-nums text-foreground">
+          <p className="text-xs text-zinc-500">Target</p>
+          <p className="text-sm font-semibold tabular-nums text-zinc-100">
             {h.target == null ? "—" : `${fmt(h.target, 2)} kr`}
           </p>
         </div>
 
         {/* Stop Loss */}
         <div>
-          <p className="text-xs text-muted-foreground">Stop Loss</p>
-          <p className="text-sm font-semibold tabular-nums text-foreground">
+          <p className="text-xs text-zinc-500">Stop Loss</p>
+          <p className="text-sm font-semibold tabular-nums text-zinc-100">
             {h.stop_loss == null ? "—" : `${fmt(h.stop_loss, 2)} kr`}
           </p>
         </div>
 
         {/* Siste anbefaling */}
         <div className="flex flex-col gap-1">
-          <p className="text-xs text-muted-foreground">Anbefaling</p>
+          <p className="text-xs text-zinc-500">Anbefaling</p>
           {h.aiHandling ? (
             <Badge
               variant="outline"
@@ -136,21 +136,21 @@ function HoldingCard({ h }: { h: EnrichedHolding }) {
               {h.aiHandling}
             </Badge>
           ) : (
-            <span className="text-xs text-muted-foreground">—</span>
+            <span className="text-xs text-zinc-500">—</span>
           )}
         </div>
 
         {/* Andel + expand arrow */}
         <div className="flex items-center justify-between gap-1">
           <div>
-            <p className="text-xs text-muted-foreground">Andel</p>
-            <p className="text-xs tabular-nums text-muted-foreground">
+            <p className="text-xs text-zinc-500">Andel</p>
+            <p className="text-xs tabular-nums text-zinc-500">
               {h.andel.toFixed(1)} %
             </p>
           </div>
           <ChevronDown
             className={cn(
-              "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+              "h-4 w-4 shrink-0 text-zinc-500 transition-transform",
               expanded && "rotate-180"
             )}
           />
@@ -159,7 +159,7 @@ function HoldingCard({ h }: { h: EnrichedHolding }) {
 
       {/* Expanded panel */}
       {expanded && (
-        <div className="bg-secondary/10 space-y-3 pb-4">
+        <div className="bg-zinc-900/50 space-y-3 pb-4">
 
           {/* ── Stats + buttons aligned to header columns ── */}
           <div
@@ -173,19 +173,19 @@ function HoldingCard({ h }: { h: EnrichedHolding }) {
             <div /> {/* col 1: ticker — empty */}
             {/* col 2: under Investert */}
             <div>
-              <p className="text-xs text-muted-foreground">Antall aksjer</p>
-              <p className="text-sm font-semibold tabular-nums text-foreground">{fmt(h.antall)}</p>
+              <p className="text-xs text-zinc-500">Antall aksjer</p>
+              <p className="text-sm font-semibold tabular-nums text-zinc-100">{fmt(h.antall)}</p>
             </div>
             <div /> {/* col 3: under Avkastning — empty */}
             {/* col 4: under Target */}
             <div>
-              <p className="text-xs text-muted-foreground">Kjøpskurs</p>
-              <p className="text-sm font-semibold tabular-nums text-foreground">{fmt(h.kjopskurs, 2)} kr</p>
+              <p className="text-xs text-zinc-500">Kjøpskurs</p>
+              <p className="text-sm font-semibold tabular-nums text-zinc-100">{fmt(h.kjopskurs, 2)} kr</p>
             </div>
             {/* col 5: under Stop Loss */}
             <div>
-              <p className="text-xs text-muted-foreground">Siste kurs</p>
-              <p className="text-sm font-semibold tabular-nums text-foreground">
+              <p className="text-xs text-zinc-500">Siste kurs</p>
+              <p className="text-sm font-semibold tabular-nums text-zinc-100">
                 {h.siste_kurs != null ? `${fmt(h.siste_kurs, 2)} kr` : "—"}
               </p>
             </div>
@@ -208,30 +208,30 @@ function HoldingCard({ h }: { h: EnrichedHolding }) {
           </div>
 
           {/* ── Siste AI-analyse ── */}
-          <div className="mx-4 rounded-lg border border-border/60 bg-white/[0.06] p-4 space-y-2">
+          <div className="mx-4 rounded-lg border border-zinc-800/60 bg-zinc-900/50 p-4 space-y-2">
             <div className="flex items-center gap-2">
-              <BrainCircuit className="h-3.5 w-3.5 text-primary/70 shrink-0" />
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-primary/70">
+              <BrainCircuit className="h-3.5 w-3.5 text-violet-400/70 shrink-0" />
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-violet-400/70">
                 Siste AI-analyse
               </p>
             </div>
             {h.aiDetaljer ? (
-              <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
+              <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">
                 {h.aiDetaljer}
               </p>
             ) : (
-              <p className="text-xs text-muted-foreground italic">
+              <p className="text-xs text-zinc-500 italic">
                 Ingen AI-analyse registrert for {h.ticker}.
               </p>
             )}
           </div>
 
           {/* ── Beskrivelse ── */}
-          <div className="mx-4 rounded-lg border border-border/60 bg-white/[0.06] px-4 py-3">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-primary/70 mb-1.5">
+          <div className="mx-4 rounded-lg border border-zinc-800/60 bg-zinc-900/50 px-4 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-violet-400/70 mb-1.5">
               Beskrivelse
             </p>
-            <p className="text-xs text-muted-foreground/50 italic">—</p>
+            <p className="text-xs text-zinc-500/50 italic">—</p>
           </div>
 
         </div>
@@ -246,11 +246,11 @@ function WatchlistRow({ item }: { item: WatchlistItem }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="border-b border-border/40 last:border-0">
+    <div className="border-b border-zinc-800/40 last:border-0">
       <button
         type="button"
         onClick={() => setExpanded((o) => !o)}
-        className="w-full text-left px-4 py-3 hover:bg-secondary/20 transition-colors flex items-center gap-3"
+        className="w-full text-left px-4 py-3 hover:bg-zinc-900/60 transition-colors flex items-center gap-3"
       >
         {/* Ticker badge */}
         <div className="flex h-6 w-14 items-center justify-center rounded bg-emerald-500/10 text-[10px] font-bold text-emerald-400 shrink-0 ring-1 ring-emerald-500/20">
@@ -259,11 +259,11 @@ function WatchlistRow({ item }: { item: WatchlistItem }) {
 
         {/* Name + handling */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-foreground leading-tight truncate">
+          <p className="text-sm font-medium text-zinc-100 leading-tight truncate">
             {item.selskapsnavn ?? item.ticker}
           </p>
           {item.aiDetaljer && (
-            <p className="text-xs text-muted-foreground truncate mt-0.5">
+            <p className="text-xs text-zinc-500 truncate mt-0.5">
               {item.aiDetaljer.slice(0, 90)}{item.aiDetaljer.length > 90 ? "…" : ""}
             </p>
           )}
@@ -271,7 +271,7 @@ function WatchlistRow({ item }: { item: WatchlistItem }) {
 
         {/* Siste kurs */}
         {item.siste_kurs != null && (
-          <span className="text-xs tabular-nums text-muted-foreground shrink-0">
+          <span className="text-xs tabular-nums text-zinc-500 shrink-0">
             Siste kurs: {fmt(item.siste_kurs, 2)} kr
           </span>
         )}
@@ -288,7 +288,7 @@ function WatchlistRow({ item }: { item: WatchlistItem }) {
 
         <ChevronDown
           className={cn(
-            "h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform",
+            "h-3.5 w-3.5 shrink-0 text-zinc-500 transition-transform",
             expanded && "rotate-180"
           )}
         />
@@ -296,15 +296,15 @@ function WatchlistRow({ item }: { item: WatchlistItem }) {
 
       {/* Expanded: full AI analyse */}
       {expanded && item.aiDetaljer && (
-        <div className="px-4 pb-3 pt-1 bg-secondary/10">
-          <div className="rounded-lg border border-border bg-background/40 p-3 space-y-1.5">
+        <div className="px-4 pb-3 pt-1 bg-zinc-900/50">
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 space-y-1.5">
             <div className="flex items-center gap-2">
               <BrainCircuit className="h-3 w-3 text-emerald-400/70 shrink-0" />
               <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-400/70">
                 AI-analyse
               </p>
             </div>
-            <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
+            <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">
               {item.aiDetaljer}
             </p>
           </div>
@@ -325,14 +325,14 @@ function WatchlistSection({ items }: { items: WatchlistItem[] }) {
           <Radar className="h-4 w-4 text-emerald-400" />
         </div>
         <div>
-          <h2 className="text-sm font-semibold text-foreground">AI Radar (Watchlist)</h2>
-          <p className="text-xs text-muted-foreground">
+          <h2 className="text-sm font-semibold text-zinc-100">AI Radar (Watchlist)</h2>
+          <p className="text-xs text-zinc-500">
             Aksjer overvåket av AI med kjøpssignal
           </p>
         </div>
       </div>
 
-      <Card className="bg-card border-border overflow-hidden">
+      <Card className="bg-zinc-900/40 border-zinc-800 overflow-hidden">
         {items.length === 0 ? (
           /* Empty state */
           <CardContent className="py-12 flex flex-col items-center gap-3 text-center">
@@ -343,15 +343,15 @@ function WatchlistSection({ items }: { items: WatchlistItem[] }) {
               <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-400/30 animate-pulse" />
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-medium text-foreground/70">Radaren er tom.</p>
-              <p className="text-xs text-muted-foreground max-w-xs">
+              <p className="text-sm font-medium text-zinc-100/70">Radaren er tom.</p>
+              <p className="text-xs text-zinc-500 max-w-xs">
                 AI-en skanner markedet etter nye muligheter.
               </p>
             </div>
           </CardContent>
         ) : (
           <>
-            <CardHeader className="pb-2 border-b border-border">
+            <CardHeader className="pb-2 border-b border-zinc-800">
               <CardDescription className="text-xs">
                 Klikk på en rad for full analyse · {items.length} kandidat{items.length !== 1 ? "er" : ""}
               </CardDescription>
@@ -433,12 +433,12 @@ export function PortefoljeClient({
     <div className="space-y-8">
       {/* ── Holdings table ──────────────────────────────────────────── */}
       {enriched.length === 0 ? (
-        <p className="px-6 py-8 text-center text-sm text-muted-foreground">
+        <p className="px-6 py-8 text-center text-sm text-zinc-500">
           Ingen posisjoner funnet i tabellen <code className="font-mono">portfolio</code>.
         </p>
       ) : (
-        <Card className="bg-card border-border overflow-hidden">
-          <CardHeader className="pb-3 border-b border-border">
+        <Card className="bg-zinc-900/40 border-zinc-800 overflow-hidden">
+          <CardHeader className="pb-3 border-b border-zinc-800">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-sm font-semibold">Alle posisjoner</CardTitle>
@@ -448,7 +448,7 @@ export function PortefoljeClient({
               </div>
               <div className="flex items-center gap-2">
                 {lastUpdated && (
-                  <span className="text-[10px] text-muted-foreground/60 tabular-nums">
+                  <span className="text-[10px] text-zinc-500/60 tabular-nums">
                     Oppdatert {lastUpdated.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                   </span>
                 )}
@@ -457,9 +457,9 @@ export function PortefoljeClient({
                   onClick={fetchLatest}
                   disabled={refreshing}
                   title="Oppdater nå"
-                  className="flex items-center justify-center h-6 w-6 rounded hover:bg-secondary/50 transition-colors disabled:opacity-40"
+                  className="flex items-center justify-center h-6 w-6 rounded hover:bg-zinc-800/60 transition-colors disabled:opacity-40"
                 >
-                  <RefreshCw className={cn("h-3.5 w-3.5 text-muted-foreground", refreshing && "animate-spin")} />
+                  <RefreshCw className={cn("h-3.5 w-3.5 text-zinc-500", refreshing && "animate-spin")} />
                 </button>
               </div>
             </div>
@@ -467,7 +467,7 @@ export function PortefoljeClient({
           <CardContent className="p-0">
             {/* Column headers */}
             <div
-              className="hidden lg:grid px-4 py-2 border-b border-border/50 bg-secondary/20 gap-x-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground"
+              className="hidden lg:grid px-4 py-2 border-b border-zinc-800/50 bg-zinc-900/60 gap-x-3 text-[10px] font-medium uppercase tracking-wider text-zinc-500"
               style={{
                 gridTemplateColumns:
                   "minmax(80px,1fr) minmax(80px,1fr) repeat(4,minmax(60px,1fr)) minmax(100px,1fr) 24px",
@@ -488,9 +488,9 @@ export function PortefoljeClient({
             ))}
 
             {/* Total row */}
-            <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-secondary/20">
-              <span className="text-xs font-semibold text-muted-foreground">Totalt investert</span>
-              <span className="text-sm font-bold text-foreground tabular-nums">
+            <div className="flex items-center justify-between px-4 py-3 border-t border-zinc-800 bg-zinc-900/60">
+              <span className="text-xs font-semibold text-zinc-500">Totalt investert</span>
+              <span className="text-sm font-bold text-zinc-100 tabular-nums">
                 {totalInvestert.toLocaleString("nb-NO", { maximumFractionDigits: 0 })} kr
               </span>
             </div>

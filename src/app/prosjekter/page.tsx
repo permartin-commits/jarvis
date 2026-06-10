@@ -1,4 +1,4 @@
-import { Sidebar } from "@/components/sidebar";
+import { DashboardFrame } from "@/components/DashboardFrame";
 import { query } from "@/lib/db";
 import { ProsjekterClient, type MasterplanRow } from "./ProsjekterClient";
 
@@ -17,11 +17,10 @@ export default async function ProsjekterPage() {
   const rows = await getMasterplan();
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background pt-14 md:pt-0">
+    <DashboardFrame>
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background pt-14 md:pt-0">
         <ProsjekterClient rows={rows} />
       </main>
-    </div>
+    </DashboardFrame>
   );
 }

@@ -182,9 +182,9 @@ function Panel({ title, children, className }: {
   className?: string;
 }) {
   return (
-    <div className={cn("rounded-lg border border-border bg-card flex flex-col overflow-hidden", className)}>
-      <div className="px-4 py-2 bg-secondary/40 border-b border-border">
-        <p className="text-[10px] font-mono font-bold tracking-[0.3em] uppercase text-muted-foreground">
+    <div className={cn("rounded-xl border border-zinc-800 bg-zinc-900/40 flex flex-col overflow-hidden", className)}>
+      <div className="px-4 py-2 bg-zinc-900/60 border-b border-zinc-800">
+        <p className="text-[10px] font-mono font-bold tracking-[0.3em] uppercase text-zinc-500">
           {title}
         </p>
       </div>
@@ -197,14 +197,14 @@ function Panel({ title, children, className }: {
 
 // ── Metric row ────────────────────────────────────────────────────────────────
 
-function Metric({ label, value, valueClass = "text-foreground" }: {
+function Metric({ label, value, valueClass = "text-zinc-100" }: {
   label: string;
   value: string;
   valueClass?: string;
 }) {
   return (
     <div className="flex items-baseline gap-3">
-      <span className="font-mono text-[10px] tracking-widest uppercase text-muted-foreground w-24 shrink-0">
+      <span className="font-mono text-[10px] tracking-widest uppercase text-zinc-500 w-24 shrink-0">
         {label}
       </span>
       <span className={cn("font-mono text-sm font-semibold tabular-nums", valueClass)}>
@@ -216,14 +216,14 @@ function Metric({ label, value, valueClass = "text-foreground" }: {
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
 
-function StatCard({ label, value, valueClass = "text-foreground" }: {
+function StatCard({ label, value, valueClass = "text-zinc-100" }: {
   label: string;
   value: string;
   valueClass?: string;
 }) {
   return (
-    <div className="rounded-md border border-border bg-secondary/20 p-3 text-center space-y-1">
-      <p className="font-mono text-[9px] tracking-[0.25em] uppercase text-muted-foreground">{label}</p>
+    <div className="rounded-md border border-zinc-800 bg-zinc-800/40 p-3 text-center space-y-1">
+      <p className="font-mono text-[9px] tracking-[0.25em] uppercase text-zinc-500">{label}</p>
       <p className={cn("font-mono text-2xl font-bold tabular-nums", valueClass)}>{value}</p>
     </div>
   );
@@ -239,14 +239,14 @@ function MemBar({ usedMb, totalMb }: { usedMb: number; totalMb: number }) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <span className="font-mono text-[10px] tracking-widest uppercase text-muted-foreground">
+        <span className="font-mono text-[10px] tracking-widest uppercase text-zinc-500">
           Memory
         </span>
         <span className="font-mono text-xs tabular-nums text-red-400">
           {usedGb} / {totalGb} GB &nbsp;{pct}%
         </span>
       </div>
-      <div className="h-1.5 rounded-full bg-secondary/40 overflow-hidden">
+      <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-700 bg-red-500"
           style={{ width: `${pct}%`, boxShadow: "0 0 8px rgba(239,68,68,0.6)" }}
@@ -270,14 +270,14 @@ function DiskBar({
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <span className="font-mono text-[10px] tracking-widest uppercase text-muted-foreground">
+        <span className="font-mono text-[10px] tracking-widest uppercase text-zinc-500">
           Root Disk
         </span>
         <span className="font-mono text-xs tabular-nums text-red-400">
           {used ?? "?"} / {total ?? "?"} &nbsp;{pct}%
         </span>
       </div>
-      <div className="h-1.5 rounded-full bg-secondary/40 overflow-hidden">
+      <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-700 bg-red-500"
           style={{ width: `${pct}%`, boxShadow: "0 0 8px rgba(239,68,68,0.6)" }}
@@ -314,27 +314,27 @@ function AiMetricsPanel({
   return (
     <Panel title="▸ AI METRICS — pia_usage_log" className="h-full">
       {loading && (
-        <p className="font-mono text-xs text-muted-foreground animate-pulse">Laster…</p>
+        <p className="font-mono text-xs text-zinc-500 animate-pulse">Laster…</p>
       )}
       {!loading && metrics && (
         <div className="space-y-4">
           {/* Summary stats */}
           <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-md border border-border bg-secondary/20 px-2 py-2 text-center">
-              <p className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">Analyser</p>
-              <p className="font-mono text-lg font-bold tabular-nums text-foreground">
+            <div className="rounded-md border border-zinc-800 bg-zinc-800/40 px-2 py-2 text-center">
+              <p className="font-mono text-[9px] uppercase tracking-widest text-zinc-500">Analyser</p>
+              <p className="font-mono text-lg font-bold tabular-nums text-zinc-100">
                 {metrics.calls.toLocaleString("nb-NO")}
               </p>
             </div>
-            <div className="rounded-md border border-border bg-secondary/20 px-2 py-2 text-center">
-              <p className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">Kostnad</p>
-              <p className="font-mono text-lg font-bold tabular-nums text-primary">
+            <div className="rounded-md border border-zinc-800 bg-zinc-800/40 px-2 py-2 text-center">
+              <p className="font-mono text-[9px] uppercase tracking-widest text-zinc-500">Kostnad</p>
+              <p className="font-mono text-lg font-bold tabular-nums text-violet-400">
                 {metrics.costNokFmt}
               </p>
             </div>
-            <div className="rounded-md border border-border bg-secondary/20 px-2 py-2 text-center">
-              <p className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">Tokens</p>
-              <p className="font-mono text-lg font-bold tabular-nums text-foreground">
+            <div className="rounded-md border border-zinc-800 bg-zinc-800/40 px-2 py-2 text-center">
+              <p className="font-mono text-[9px] uppercase tracking-widest text-zinc-500">Tokens</p>
+              <p className="font-mono text-lg font-bold tabular-nums text-zinc-100">
                 {formatTokens(metrics.tokens)}
               </p>
             </div>
@@ -342,9 +342,9 @@ function AiMetricsPanel({
 
           {/* Usage rows table */}
           {rows.length > 0 ? (
-            <div className="border-t border-border pt-3 space-y-1">
+            <div className="border-t border-zinc-800 pt-3 space-y-1">
               {/* Table header */}
-              <div className="flex items-center gap-2 font-mono text-[9px] tracking-widest uppercase text-muted-foreground pb-1 border-b border-border/60">
+              <div className="flex items-center gap-2 font-mono text-[9px] tracking-widest uppercase text-zinc-500 pb-1 border-b border-zinc-800/60">
                 <span className="flex-1 truncate">Execution ID</span>
                 <span className="w-16 text-right shrink-0">Tokens</span>
                 <span className="w-16 text-right shrink-0">USD</span>
@@ -354,15 +354,15 @@ function AiMetricsPanel({
                 {rows.map((r, i) => (
                   <div
                     key={r.execution_id ?? i}
-                    className="flex items-center gap-2 py-1 border-b border-border/30 last:border-0"
+                    className="flex items-center gap-2 py-1 border-b border-zinc-800/30 last:border-0"
                   >
-                    <span className="font-mono text-[10px] text-muted-foreground flex-1 truncate">
+                    <span className="font-mono text-[10px] text-zinc-500 flex-1 truncate">
                       {r.execution_id ?? "—"}
                     </span>
-                    <span className="font-mono text-[10px] tabular-nums text-foreground w-16 text-right shrink-0">
+                    <span className="font-mono text-[10px] tabular-nums text-zinc-100 w-16 text-right shrink-0">
                       {r.total_tokens != null ? Number(r.total_tokens).toLocaleString("nb-NO") : "—"}
                     </span>
-                    <span className="font-mono text-[10px] tabular-nums text-primary w-16 text-right shrink-0">
+                    <span className="font-mono text-[10px] tabular-nums text-violet-400 w-16 text-right shrink-0">
                       {r.kostnad_usd != null ? Number(r.kostnad_usd).toFixed(4) : "—"}
                     </span>
                   </div>
@@ -371,7 +371,7 @@ function AiMetricsPanel({
             </div>
           ) : (
             !loading && (
-              <p className="font-mono text-[10px] text-muted-foreground pt-2 border-t border-border">
+              <p className="font-mono text-[10px] text-zinc-500 pt-2 border-t border-zinc-800">
                 Ingen rader i pia_usage_log ennå.
               </p>
             )
@@ -388,17 +388,17 @@ function SystemLogsPanel({ logs, loading }: { logs: SystemLog[]; loading: boolea
   return (
     <Panel title="▸ SYSTEM LOGS">
       {loading && (
-        <p className="font-mono text-xs text-muted-foreground animate-pulse">Laster…</p>
+        <p className="font-mono text-xs text-zinc-500 animate-pulse">Laster…</p>
       )}
       {!loading && logs.length === 0 && (
-        <p className="font-mono text-xs text-muted-foreground">
+        <p className="font-mono text-xs text-zinc-500">
           Ingen logger funnet i system_logs-tabellen.
         </p>
       )}
       {!loading && logs.length > 0 && (
         <div className="overflow-x-auto">
           {/* Header */}
-          <div className="flex items-center gap-3 pb-2 mb-1 border-b border-border font-mono text-[9px] tracking-widest uppercase text-muted-foreground">
+          <div className="flex items-center gap-3 pb-2 mb-1 border-b border-zinc-800 font-mono text-[9px] tracking-widest uppercase text-zinc-500">
             <span className="w-32 shrink-0">Tidspunkt</span>
             <span className="w-16 shrink-0">Nivå</span>
             <span className="w-24 shrink-0">Kilde</span>
@@ -412,7 +412,7 @@ function SystemLogsPanel({ logs, loading }: { logs: SystemLog[]; loading: boolea
               const lvlClass =
                 lvl === "error" ? "text-red-400" :
                 lvl === "warn"  ? "text-yellow-400" :
-                "text-muted-foreground";
+                "text-zinc-500";
               const lvlBg =
                 lvl === "error" ? "bg-red-500/10" :
                 lvl === "warn"  ? "bg-yellow-500/10" :
@@ -426,16 +426,16 @@ function SystemLogsPanel({ logs, loading }: { logs: SystemLog[]; loading: boolea
                     lvlBg
                   )}
                 >
-                  <span className="w-32 shrink-0 tabular-nums text-muted-foreground text-[10px]">
+                  <span className="w-32 shrink-0 tabular-nums text-zinc-500 text-[10px]">
                     {formatTs(String(p.created_at ?? log.created_at ?? ""))}
                   </span>
                   <span className={cn("w-16 shrink-0 font-semibold text-[10px] uppercase", lvlClass)}>
                     {String(p.level ?? p.severity ?? lvl)}
                   </span>
-                  <span className="w-24 shrink-0 text-muted-foreground text-[10px] truncate">
+                  <span className="w-24 shrink-0 text-zinc-500 text-[10px] truncate">
                     {logSource(log)}
                   </span>
-                  <span className="flex-1 text-foreground/80 leading-snug break-words text-[11px]">
+                  <span className="flex-1 text-zinc-300 leading-snug break-words text-[11px]">
                     {logMessage(log)}
                   </span>
                 </div>
@@ -514,28 +514,28 @@ export function SystemMonitor() {
   const temp    = status?.temperature ?? null;
 
   return (
-    <div className="p-4 md:p-6 space-y-4 min-h-screen bg-background">
+    <div className="p-4 md:p-6 space-y-4 min-h-full bg-zinc-950">
 
       {/* Title bar */}
-      <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-2.5">
+      <div className="flex flex-col gap-2 rounded-xl border border-zinc-800 bg-zinc-900/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2.5">
           <LiveDot />
-          <span className="font-mono text-sm font-bold tracking-[0.3em] uppercase text-foreground">
-            Master OS <span className="text-muted-foreground font-normal">{"// System Monitor"}</span>
+          <span className="font-mono text-sm font-bold tracking-[0.2em] uppercase text-zinc-100 sm:tracking-[0.3em]">
+            Agent <span className="font-normal text-zinc-500">{"// System Monitor"}</span>
           </span>
         </div>
-        <div className="flex items-center gap-4 font-mono text-[10px] text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[10px] text-zinc-500">
           {lastSeen && (
             <span>
               Sist oppdatert:{" "}
-              <span className="tabular-nums text-foreground">
+              <span className="tabular-nums text-zinc-300">
                 {lastSeen.toLocaleTimeString("nb-NO")}
               </span>
             </span>
           )}
           <span>
             Poller hvert{" "}
-            <span className="text-primary">{POLL_MS / 1000}s</span>
+            <span className="text-violet-400">{POLL_MS / 1000}s</span>
           </span>
         </div>
       </div>
@@ -549,7 +549,7 @@ export function SystemMonitor() {
           {/* Hardware */}
           <Panel title="▸ SERVER STATUS">
             {sLoad && (
-              <p className="font-mono text-xs text-muted-foreground animate-pulse">
+              <p className="font-mono text-xs text-zinc-500 animate-pulse">
                 Kobler til…
               </p>
             )}
@@ -574,18 +574,18 @@ export function SystemMonitor() {
                     <StatCard
                       label="Load Avg"
                       value={String(status.load_average)}
-                      valueClass="text-primary"
+                      valueClass="text-violet-400"
                     />
                   )}
                   <StatCard
                     label="Containere"
                     value={`${running} / ${containers.length}`}
-                    valueClass="text-primary"
+                    valueClass="text-violet-400"
                   />
                 </div>
 
                 {/* Memory + Disk bars */}
-                <div className="rounded-md border border-border bg-secondary/20 p-4 space-y-5">
+                <div className="rounded-md border border-zinc-800 bg-zinc-800/40 p-4 space-y-5">
                   {status.memory_total_mb && (
                     <MemBar
                       usedMb={status.memory_used_mb ?? 0}
@@ -613,16 +613,16 @@ export function SystemMonitor() {
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Panel title={`▸ DOCKER CONTAINERS — ${running} kjørende / ${containers.length} totalt`}>
               {sLoad && (
-                <p className="font-mono text-xs text-muted-foreground animate-pulse">Laster…</p>
+                <p className="font-mono text-xs text-zinc-500 animate-pulse">Laster…</p>
               )}
               {!sLoad && containers.length === 0 && (
-                <p className="font-mono text-xs text-muted-foreground">
+                <p className="font-mono text-xs text-zinc-500">
                   Ingen container-data. Sjekk JSONB-feltet i server_status.
                 </p>
               )}
               {containers.length > 0 && (
                 <div className="space-y-0">
-                  <div className="mb-1 flex items-center gap-3 border-b border-border pb-2 font-mono text-[9px] tracking-widest uppercase text-muted-foreground">
+                  <div className="mb-1 flex items-center gap-3 border-b border-zinc-800 pb-2 font-mono text-[9px] tracking-widest uppercase text-zinc-500">
                     <span className="w-3 shrink-0" />
                     <span className="flex-1">Navn</span>
                     <span className="w-32 shrink-0 text-right">Image</span>
@@ -638,13 +638,13 @@ export function SystemMonitor() {
                     return (
                       <div
                         key={c.ID ?? i}
-                        className="flex items-center gap-3 border-b border-border/40 py-1.5 last:border-0"
+                        className="flex items-center gap-3 border-b border-zinc-800/40 py-1.5 last:border-0"
                       >
                         <span className={cn("shrink-0 text-xs", dotClass)}>●</span>
-                        <span className="flex-1 truncate font-mono text-xs text-foreground">
+                        <span className="flex-1 truncate font-mono text-xs text-zinc-100">
                           {containerName(c)}
                         </span>
-                        <span className="w-32 shrink-0 truncate text-right font-mono text-[10px] text-muted-foreground">
+                        <span className="w-32 shrink-0 truncate text-right font-mono text-[10px] text-zinc-500">
                           {c.Image ?? "—"}
                         </span>
                         <span className={cn(
@@ -674,7 +674,7 @@ export function SystemMonitor() {
       <SystemLogsPanel logs={logs} loading={lLoad} />
 
       {/* Footer */}
-      <p className="font-mono text-[9px] tracking-widest uppercase text-center text-muted-foreground/30 pt-2">
+      <p className="font-mono text-[9px] tracking-widest uppercase text-center text-zinc-500/30 pt-2">
         {"master-os v0.1 // jarvis dashboard //"} {new Date().getFullYear()}
       </p>
     </div>

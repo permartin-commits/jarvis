@@ -1,4 +1,4 @@
-import { Sidebar } from "@/components/sidebar";
+import { DashboardFrame } from "@/components/DashboardFrame";
 import {
   Card,
   CardContent,
@@ -31,9 +31,8 @@ export default async function AiLoggerPage() {
     Object.entries(actionCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto bg-background pt-14 md:pt-0">
+    <DashboardFrame>
+      <main className="min-w-0 flex-1 overflow-y-auto bg-background pt-14 md:pt-0">
         {/* Header */}
         <div className="sticky top-14 md:top-0 z-10 border-b border-border bg-background/80 backdrop-blur-sm px-4 md:px-8 py-4">
           <h1 className="text-lg font-semibold text-foreground">AI Logger</h1>
@@ -66,7 +65,7 @@ export default async function AiLoggerPage() {
           <AiLogClient logs={logs} />
         </div>
       </main>
-    </div>
+    </DashboardFrame>
   );
 }
 

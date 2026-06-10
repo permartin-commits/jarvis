@@ -47,7 +47,13 @@ function loadSessions(): Promise<BeastmakerSession[]> {
     .catch(() => []);
 }
 
-export function BeastmakerLogger({ refreshKey = 0 }: { refreshKey?: number }) {
+export function BeastmakerLogger({
+  refreshKey = 0,
+  dark = false,
+}: {
+  refreshKey?: number;
+  dark?: boolean;
+}) {
   const [sessions, setSessions] = useState<BeastmakerSession[]>([]);
   const [sortCol, setSortCol] = useState<SortCol>("dato");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -90,34 +96,61 @@ export function BeastmakerLogger({ refreshKey = 0 }: { refreshKey?: number }) {
 
   function SortIcon({ col }: { col: SortCol }) {
     if (sortCol !== col) return <ArrowUpDown className="h-3 w-3 opacity-30" />;
+    const activeClass = dark ? "text-violet-400" : "text-primary";
     return sortDir === "asc" ? (
-      <ChevronUp className="h-3 w-3 text-primary" />
+      <ChevronUp className={cn("h-3 w-3", activeClass)} />
     ) : (
-      <ChevronDown className="h-3 w-3 text-primary" />
+      <ChevronDown className={cn("h-3 w-3", activeClass)} />
     );
   }
 
   if (sessions.length === 0) return null;
 
   return (
-    <section className="overflow-hidden rounded-xl border border-border">
-      <header className="flex items-center gap-3 border-b border-border px-4 py-3">
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 ring-1 ring-primary/20">
-          <span className="text-xs font-bold text-primary">B</span>
+    <section
+      className={cn(
+        "overflow-hidden rounded-xl border",
+        dark ? "border-zinc-800 bg-zinc-900/40" : "border-border"
+      )}
+    >
+      <header
+        className={cn(
+          "flex items-center gap-3 border-b px-4 py-3",
+          dark ? "border-zinc-800" : "border-border"
+        )}
+      >
+        <div
+          className={cn(
+            "flex h-7 w-7 shrink-0 items-center justify-center rounded-md ring-1",
+            dark
+              ? "bg-violet-500/10 ring-violet-500/25"
+              : "bg-primary/10 ring-primary/20"
+          )}
+        >
+          <span className={cn("text-xs font-bold", dark ? "text-violet-400" : "text-primary")}>
+            B
+          </span>
         </div>
         <div className="min-w-0 flex-1">
-          <h2 className="text-sm font-semibold text-foreground">Beastmaker</h2>
-          <p className="text-xs text-muted-foreground">
+          <h2 className={cn("text-sm font-semibold", dark ? "text-zinc-100" : "text-foreground")}>
+            Beastmaker
+          </h2>
+          <p className={cn("text-xs", dark ? "text-zinc-500" : "text-muted-foreground")}>
             {sessions.length} enkeltregistreringer
           </p>
         </div>
       </header>
 
-      <div className="flex items-center justify-between border-b border-border/60 px-4 py-2">
-        <span className="text-xs uppercase tracking-wide text-muted-foreground">
+      <div
+        className={cn(
+          "flex items-center justify-between border-b px-4 py-2",
+          dark ? "border-zinc-800" : "border-border/60"
+        )}
+      >
+        <span className={cn("text-xs uppercase tracking-wide", dark ? "text-zinc-600" : "text-muted-foreground")}>
           Historikk
         </span>
-        <span className="text-xs text-muted-foreground">
+        <span className={cn("text-xs", dark ? "text-zinc-600" : "text-muted-foreground")}>
           {displayed.length}
           {filterCm !== "all" ? ` / ${sessions.length}` : ""} økter
         </span>
@@ -129,11 +162,21 @@ export function BeastmakerLogger({ refreshKey = 0 }: { refreshKey?: number }) {
         </p>
       ) : (
         <>
-          <div className="flex items-center gap-3 border-b border-border/60 bg-secondary/20 px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          <div
+            className={cn(
+              "flex items-center gap-3 border-b px-4 py-2 text-[10px] font-medium uppercase tracking-wider",
+              dark
+                ? "border-zinc-800 bg-zinc-900/60 text-zinc-600"
+                : "border-border/60 bg-secondary/20 text-muted-foreground"
+            )}
+          >
             <button
               type="button"
               onClick={() => toggleSort("dato")}
-              className="flex flex-1 items-center gap-1 text-left transition-colors hover:text-foreground"
+              className={cn(
+                "flex flex-1 items-center gap-1 text-left transition-colors",
+                dark ? "hover:text-zinc-300" : "hover:text-foreground"
+              )}
             >
               Dato <SortIcon col="dato" />
             </button>
@@ -141,8 +184,9 @@ export function BeastmakerLogger({ refreshKey = 0 }: { refreshKey?: number }) {
               type="button"
               onClick={cycleFilterCm}
               className={cn(
-                "flex w-16 items-center gap-1 transition-colors hover:text-foreground",
-                filterCm !== "all" && "text-primary"
+                "flex w-16 items-center gap-1 transition-colors",
+                dark ? "hover:text-zinc-300" : "hover:text-foreground",
+                filterCm !== "all" && (dark ? "text-violet-400" : "text-primary")
               )}
               title="Klikk for å filtrere på grep"
             >
@@ -152,21 +196,27 @@ export function BeastmakerLogger({ refreshKey = 0 }: { refreshKey?: number }) {
             <button
               type="button"
               onClick={() => toggleSort("varighet_sekunder")}
-              className="flex w-14 items-center justify-end gap-1 transition-colors hover:text-foreground"
+              className={cn(
+                "flex w-14 items-center justify-end gap-1 transition-colors",
+                dark ? "hover:text-zinc-300" : "hover:text-foreground"
+              )}
             >
               Tid <SortIcon col="varighet_sekunder" />
             </button>
             <span className="w-16 shrink-0 text-right">Vekt</span>
           </div>
 
-          <div className="divide-y divide-border/60">
+          <div className={cn("divide-y", dark ? "divide-zinc-800/70" : "divide-border/60")}>
             {visibleRows.map((s) => (
               <div
                 key={s.id}
-                className="px-4 py-2.5 transition-colors hover:bg-secondary/20"
+                className={cn(
+                  "px-4 py-2.5 transition-colors",
+                  dark ? "hover:bg-zinc-800/40" : "hover:bg-secondary/20"
+                )}
               >
                 <div className="flex items-baseline gap-3">
-                  <span className="flex-1 text-xs font-medium text-foreground">
+                  <span className={cn("flex-1 text-xs font-medium", dark ? "text-zinc-300" : "text-foreground")}>
                     {formatDate(s.starttid)}
                   </span>
                   <span
@@ -181,10 +231,10 @@ export function BeastmakerLogger({ refreshKey = 0 }: { refreshKey?: number }) {
                   >
                     {s.cm_grip} cm
                   </span>
-                  <span className="w-14 shrink-0 text-right text-xs tabular-nums text-foreground">
+                  <span className={cn("w-14 shrink-0 text-right text-xs tabular-nums", dark ? "text-zinc-300" : "text-foreground")}>
                     {formatDuration(s.varighet_sekunder)}
                   </span>
-                  <span className="w-16 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+                  <span className={cn("w-16 shrink-0 text-right text-xs tabular-nums", dark ? "text-zinc-600" : "text-muted-foreground")}>
                     {s.med_vekt
                       ? s.ekstravekt_kg
                         ? `+${s.ekstravekt_kg} kg`
@@ -193,7 +243,7 @@ export function BeastmakerLogger({ refreshKey = 0 }: { refreshKey?: number }) {
                   </span>
                 </div>
                 {s.kommentar && (
-                  <p className="mt-1 text-[11px] leading-snug text-muted-foreground/70">
+                  <p className={cn("mt-1 text-[11px] leading-snug", dark ? "text-zinc-600" : "text-muted-foreground/70")}>
                     {s.kommentar}
                   </p>
                 )}
@@ -202,11 +252,14 @@ export function BeastmakerLogger({ refreshKey = 0 }: { refreshKey?: number }) {
           </div>
 
           {hasMore && (
-            <div className="border-t border-border/60 px-4 py-2">
+            <div className={cn("border-t px-4 py-2", dark ? "border-zinc-800/70" : "border-border/60")}>
               <button
                 type="button"
                 onClick={() => setShowAll((v) => !v)}
-                className="h-8 w-full text-xs text-muted-foreground transition-colors hover:text-foreground"
+                className={cn(
+                  "h-8 w-full text-xs transition-colors",
+                  dark ? "text-zinc-500 hover:text-zinc-300" : "text-muted-foreground hover:text-foreground"
+                )}
               >
                 {showAll
                   ? "Vis færre"

@@ -42,7 +42,13 @@ function loadWorkouts(): Promise<{
     .catch(() => ({ workouts: [], categories: [] }));
 }
 
-export function StrengthTrainingLog({ refreshKey = 0 }: { refreshKey?: number }) {
+export function StrengthTrainingLog({
+  refreshKey = 0,
+  dark = false,
+}: {
+  refreshKey?: number;
+  dark?: boolean;
+}) {
   const [workouts, setWorkouts] = useState<WorkoutHistoryRow[]>([]);
   const [dbCategories, setDbCategories] = useState<string[]>([]);
   const [category, setCategory] = useState<string>(ALL_CATEGORY);
@@ -90,16 +96,35 @@ export function StrengthTrainingLog({ refreshKey = 0 }: { refreshKey?: number })
         />
       )}
 
-      <section className="overflow-hidden rounded-xl border border-border">
-      <header className="flex flex-wrap items-center gap-3 border-b border-border bg-gradient-to-br from-primary/[0.06] via-card to-card px-4 py-3.5">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 ring-1 ring-primary/25">
-          <Dumbbell className="h-4 w-4 text-primary" />
+      <section
+        className={cn(
+          "overflow-hidden rounded-xl border",
+          dark ? "border-zinc-800 bg-zinc-900/40" : "border-border"
+        )}
+      >
+      <header
+        className={cn(
+          "flex flex-wrap items-center gap-3 border-b px-4 py-3.5",
+          dark
+            ? "border-zinc-800 bg-zinc-900/60"
+            : "border-border bg-gradient-to-br from-primary/[0.06] via-card to-card"
+        )}
+      >
+        <div
+          className={cn(
+            "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1",
+            dark
+              ? "bg-violet-500/10 ring-violet-500/25"
+              : "bg-primary/15 ring-primary/25"
+          )}
+        >
+          <Dumbbell className={cn("h-4 w-4", dark ? "text-violet-400" : "text-primary")} />
         </div>
         <div className="min-w-0 flex-1">
-          <h2 className="text-sm font-semibold tracking-tight text-foreground">
+          <h2 className={cn("text-sm font-semibold tracking-tight", dark ? "text-zinc-100" : "text-foreground")}>
             Styrketrening
           </h2>
-          <p className="text-xs text-muted-foreground">
+          <p className={cn("text-xs", dark ? "text-zinc-500" : "text-muted-foreground")}>
             {loading ? "Laster…" : `${filtered.length} loggede økter`}
           </p>
         </div>
@@ -112,7 +137,12 @@ export function StrengthTrainingLog({ refreshKey = 0 }: { refreshKey?: number })
         >
           <SelectTrigger
             size="sm"
-            className="ml-auto w-[8.5rem] border-border/60 bg-secondary/30"
+            className={cn(
+              "ml-auto w-[8.5rem]",
+              dark
+                ? "border-zinc-700 bg-zinc-900/80 text-zinc-300"
+                : "border-border/60 bg-secondary/30"
+            )}
           >
             <SelectValue placeholder="Kategori" />
           </SelectTrigger>
@@ -128,38 +158,48 @@ export function StrengthTrainingLog({ refreshKey = 0 }: { refreshKey?: number })
 
       <div>
           {loading ? (
-            <div className="flex items-center justify-center gap-2 py-10 text-xs text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin text-primary/70" />
+            <div className={cn("flex items-center justify-center gap-2 py-10 text-xs", dark ? "text-zinc-500" : "text-muted-foreground")}>
+              <Loader2 className={cn("h-4 w-4 animate-spin", dark ? "text-violet-400/70" : "text-primary/70")} />
               Henter økter…
             </div>
           ) : filtered.length === 0 ? (
-            <p className="py-10 text-center text-xs text-muted-foreground">
+            <p className={cn("py-10 text-center text-xs", dark ? "text-zinc-500" : "text-muted-foreground")}>
               {workouts.length === 0
                 ? "Ingen loggede økter ennå. Trykk «Logg økt» for å starte."
                 : "Ingen økter for valgt kategori."}
             </p>
           ) : (
             <>
-              <div className="flex items-center gap-3 border-b border-border/60 bg-secondary/20 px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <div
+                className={cn(
+                  "flex items-center gap-3 border-b px-4 py-2 text-[10px] font-medium uppercase tracking-wider",
+                  dark
+                    ? "border-zinc-800 bg-zinc-900/60 text-zinc-600"
+                    : "border-border/60 bg-secondary/20 text-muted-foreground"
+                )}
+              >
                 <span className="w-24 shrink-0">Dato</span>
                 <span className="min-w-0 flex-1">Økt-navn</span>
                 <span className="hidden w-32 shrink-0 sm:inline">Hovedøvelse</span>
                 <span className="w-24 shrink-0 text-right">Totalt volum</span>
               </div>
 
-              <div className="divide-y divide-border/60">
+              <div className={cn("divide-y", dark ? "divide-zinc-800/70" : "divide-border/60")}>
                 {visibleRows.map((w) => (
                   <button
                     key={w.id}
                     type="button"
                     onClick={() => setSelectedId(w.id)}
-                    className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-secondary/20"
+                    className={cn(
+                      "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
+                      dark ? "hover:bg-zinc-800/40" : "hover:bg-secondary/20"
+                    )}
                   >
-                    <span className="w-24 shrink-0 text-[10px] tabular-nums text-muted-foreground/80">
+                    <span className={cn("w-24 shrink-0 text-[10px] tabular-nums", dark ? "text-zinc-600" : "text-muted-foreground/80")}>
                       {formatDate(w.dato)}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-medium text-foreground">
+                      <p className={cn("truncate text-xs font-medium", dark ? "text-zinc-200" : "text-foreground")}>
                         {w.oktNavn}
                         {w.isPlanned && (
                           <span className="ml-1.5 rounded border border-amber-500/30 bg-amber-500/10 px-1 py-0.5 text-[8px] font-semibold uppercase tracking-wide text-amber-400">
@@ -167,20 +207,20 @@ export function StrengthTrainingLog({ refreshKey = 0 }: { refreshKey?: number })
                           </span>
                         )}
                       </p>
-                      <p className="truncate text-[10px] text-muted-foreground sm:hidden">
+                      <p className={cn("truncate text-[10px] sm:hidden", dark ? "text-zinc-600" : "text-muted-foreground")}>
                         {w.hovedovelse ?? "—"}
                         {w.notes ? " · notat" : ""}
                       </p>
                     </div>
-                    <span className="hidden w-32 shrink-0 truncate text-xs text-muted-foreground sm:inline">
+                    <span className={cn("hidden w-32 shrink-0 truncate text-xs sm:inline", dark ? "text-zinc-500" : "text-muted-foreground")}>
                       {w.hovedovelse ?? "—"}
                     </span>
                     <span
                       className={cn(
                         "w-24 shrink-0 text-right text-xs tabular-nums",
                         w.totaltVolumKg > 0
-                          ? "text-foreground"
-                          : "text-muted-foreground"
+                          ? dark ? "text-zinc-300" : "text-foreground"
+                          : dark ? "text-zinc-600" : "text-muted-foreground"
                       )}
                     >
                       {formatVolume(w.totaltVolumKg)}
@@ -190,11 +230,16 @@ export function StrengthTrainingLog({ refreshKey = 0 }: { refreshKey?: number })
               </div>
 
               {hasMore && (
-                <div className="border-t border-border/60 px-4 py-3">
+                <div className={cn("border-t px-4 py-3", dark ? "border-zinc-800/70" : "border-border/60")}>
                   <button
                     type="button"
                     onClick={() => setShowAll((v) => !v)}
-                    className="w-full rounded-md border border-border bg-secondary/20 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
+                    className={cn(
+                      "w-full rounded-md border py-2 text-xs font-medium transition-colors",
+                      dark
+                        ? "border-zinc-700 bg-zinc-900/60 text-zinc-500 hover:border-violet-500/30 hover:text-zinc-300"
+                        : "border-border bg-secondary/20 text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                    )}
                   >
                     {showAll
                       ? "Vis færre"

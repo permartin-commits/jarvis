@@ -70,13 +70,13 @@ export function QdrantMemory() {
     data?.points_count != null ? Number(data.points_count) : NaN;
   const vectors =
     data?.vectors_count != null ? Number(data.vectors_count) : NaN;
-  const statusDot = data ? ledClass(data.status) : "text-muted-foreground";
+  const statusDot = data ? ledClass(data.status) : "text-zinc-500";
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card">
-      <div className="border-b border-border bg-secondary/40 px-4 py-2">
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/40">
+      <div className="border-b border-zinc-800 bg-zinc-900/60 px-4 py-2">
         <div className="flex items-center gap-2">
-          <p className="font-mono text-[10px] font-bold tracking-[0.3em] uppercase text-muted-foreground">
+          <p className="font-mono text-[10px] font-bold tracking-[0.3em] uppercase text-zinc-500">
             ▸ QDRANT — langtidshukommelse
           </p>
           {data && (
@@ -94,29 +94,29 @@ export function QdrantMemory() {
 
       <div className="flex-1 p-4">
         {loading && (
-          <p className="animate-pulse font-mono text-xs text-muted-foreground">
+          <p className="animate-pulse font-mono text-xs text-zinc-500">
             Laster…
           </p>
         )}
 
         {!loading && !data && (
-          <p className="font-mono text-xs text-muted-foreground">
+          <p className="font-mono text-xs text-zinc-500">
             Ingen rad i{" "}
-            <span className="text-primary">qdrant_status</span>.
+            <span className="text-violet-400">qdrant_status</span>.
           </p>
         )}
 
         {!loading && data && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-md border border-border bg-secondary/20 p-3 text-center space-y-1">
-                <p className="font-mono text-[9px] tracking-[0.25em] uppercase text-muted-foreground">
+              <div className="rounded-md border border-zinc-800 bg-zinc-800/40 p-3 text-center space-y-1">
+                <p className="font-mono text-[9px] tracking-[0.25em] uppercase text-zinc-500">
                   Minner
                 </p>
                 <p
                   className={cn(
                     "font-mono text-2xl font-bold tabular-nums",
-                    Number.isFinite(points) ? "text-emerald-400" : "text-foreground"
+                    Number.isFinite(points) ? "text-emerald-400" : "text-zinc-100"
                   )}
                 >
                   {Number.isFinite(points)
@@ -124,11 +124,11 @@ export function QdrantMemory() {
                     : "—"}
                 </p>
               </div>
-              <div className="rounded-md border border-border bg-secondary/20 p-3 text-center space-y-1">
-                <p className="font-mono text-[9px] tracking-[0.25em] uppercase text-muted-foreground">
+              <div className="rounded-md border border-zinc-800 bg-zinc-800/40 p-3 text-center space-y-1">
+                <p className="font-mono text-[9px] tracking-[0.25em] uppercase text-zinc-500">
                   Vektorer
                 </p>
-                <p className="font-mono text-2xl font-bold tabular-nums text-primary">
+                <p className="font-mono text-2xl font-bold tabular-nums text-violet-400">
                   {Number.isFinite(vectors)
                     ? vectors.toLocaleString("nb-NO")
                     : "—"}
@@ -136,9 +136,9 @@ export function QdrantMemory() {
               </div>
             </div>
 
-            <div className="space-y-2 rounded-md border border-border bg-secondary/20 p-4">
+            <div className="space-y-2 rounded-md border border-zinc-800 bg-zinc-800/40 p-4">
               <div className="flex items-baseline gap-3">
-                <span className="w-24 shrink-0 font-mono text-[10px] tracking-widest uppercase text-muted-foreground">
+                <span className="w-24 shrink-0 font-mono text-[10px] tracking-widest uppercase text-zinc-500">
                   Status
                 </span>
                 <span
@@ -151,10 +151,10 @@ export function QdrantMemory() {
                 </span>
               </div>
               <div className="flex items-baseline gap-3">
-                <span className="w-24 shrink-0 font-mono text-[10px] tracking-widest uppercase text-muted-foreground">
+                <span className="w-24 shrink-0 font-mono text-[10px] tracking-widest uppercase text-zinc-500">
                   Optimizer
                 </span>
-                <span className="font-mono text-sm font-semibold tabular-nums text-foreground">
+                <span className="font-mono text-sm font-semibold tabular-nums text-zinc-100">
                   {formatOptimizerLabel(data.optimizer_status)}
                 </span>
               </div>

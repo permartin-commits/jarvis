@@ -1,5 +1,10 @@
+import { DashboardFrame } from "@/components/DashboardFrame";
 import { FitnessShell } from "./FitnessShell";
 
 export default function FitnessPage() {
-  return <FitnessShell />;
+  return (
+    <DashboardFrame>
+      <FitnessShell />
+    </DashboardFrame>
+  );
 }

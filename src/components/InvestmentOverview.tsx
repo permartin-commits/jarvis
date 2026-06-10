@@ -55,17 +55,17 @@ export function InvestmentOverview() {
   }, [refresh]);
 
   return (
-    <Card className="overflow-hidden border-border bg-card">
-      <CardHeader className="border-b border-border pb-3">
+    <Card className="overflow-hidden border-zinc-800 bg-zinc-900/40">
+      <CardHeader className="border-b border-zinc-800 pb-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 ring-1 ring-primary/25">
-            <History className="h-4 w-4 text-primary" />
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-500/10 ring-1 ring-violet-500/25">
+            <History className="h-4 w-4 text-violet-400" />
           </div>
           <div className="min-w-0 flex-1">
-            <CardTitle className="text-sm font-semibold">
+            <CardTitle className="text-sm font-semibold text-zinc-100">
               Historisk avkastning
             </CardTitle>
-            <CardDescription className="text-xs">
+            <CardDescription className="text-xs text-zinc-500">
               Realisert gevinst per ticker fra transaksjoner
             </CardDescription>
           </div>
@@ -74,19 +74,19 @@ export function InvestmentOverview() {
 
       <CardContent className="p-0">
         {loading ? (
-          <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin text-primary/70" />
+          <div className="flex items-center justify-center gap-2 py-12 text-sm text-zinc-500">
+            <Loader2 className="h-4 w-4 animate-spin text-violet-400/70" />
             Henter historikk…
           </div>
         ) : rows.length === 0 ? (
-          <p className="px-6 py-10 text-center text-sm text-muted-foreground">
+          <p className="px-6 py-10 text-center text-sm text-zinc-500">
             Ingen historiske handler i{" "}
             <code className="font-mono text-xs">historisk_avkastning</code>{" "}
             ennå.
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <div className="flex min-w-[640px] items-center gap-3 border-b border-border/60 bg-secondary/20 px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            <div className="flex min-w-[640px] items-center gap-3 border-b border-zinc-800 bg-zinc-900/60 px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-zinc-600">
               <span className="w-16 shrink-0">Ticker</span>
               <span className="min-w-0 flex-1">Selskapsnavn</span>
               <span className="w-32 shrink-0 text-right">
@@ -96,16 +96,16 @@ export function InvestmentOverview() {
               <span className="w-36 shrink-0 text-right">Siste handel</span>
             </div>
 
-            <div className="divide-y divide-border/60">
+            <div className="divide-y divide-zinc-800/70">
               {rows.map((row) => (
                 <div
                   key={row.ticker}
-                  className="flex min-w-[640px] items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/20"
+                  className="flex min-w-[640px] items-center gap-3 px-4 py-3 transition-colors hover:bg-zinc-800/40"
                 >
-                  <span className="w-16 shrink-0 font-mono text-xs font-bold text-primary">
+                  <span className="w-16 shrink-0 font-mono text-xs font-bold text-violet-400">
                     {row.ticker}
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-sm text-foreground">
+                  <span className="min-w-0 flex-1 truncate text-sm text-zinc-200">
                     {row.selskapsnavn ?? "—"}
                   </span>
                   <span
@@ -115,15 +115,15 @@ export function InvestmentOverview() {
                         ? "text-emerald-400"
                         : row.totalGevinst < 0
                         ? "text-red-400"
-                        : "text-muted-foreground"
+                        : "text-zinc-500"
                     )}
                   >
                     {formatGevinst(row.totalGevinst)}
                   </span>
-                  <span className="w-20 shrink-0 text-right text-sm tabular-nums text-foreground">
+                  <span className="w-20 shrink-0 text-right text-sm tabular-nums text-zinc-200">
                     {row.antallTrades.toLocaleString("nb-NO")}
                   </span>
-                  <span className="w-36 shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
+                  <span className="w-36 shrink-0 text-right text-[11px] tabular-nums text-zinc-500">
                     {formatSisteHandel(row.sisteHandel)}
                   </span>
                 </div>

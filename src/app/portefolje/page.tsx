@@ -1,4 +1,4 @@
-import { Sidebar } from "@/components/sidebar";
+import { DashboardFrame } from "@/components/DashboardFrame";
 import { PiaCoreSection } from "@/components/PiaCoreSection";
 import {
   getPortfolioHoldings,
@@ -25,7 +25,6 @@ export default async function PortefoljePage() {
   const watchlist   = await getWatchlistItems().catch(() => []);
   const dbError: string | null = null;
 
-  // Avkastning KPI formatting
   const avkStr = (() => {
     if (stats.totalAvkastningPct == null) return null;
     const pct = stats.totalAvkastningPct;
@@ -44,88 +43,90 @@ export default async function PortefoljePage() {
   const avkNegative = (stats.totalAvkastningPct ?? 0) < 0;
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background pt-14 md:pt-0">
+    <DashboardFrame>
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-zinc-950 pt-14 md:pt-0">
         <div className="flex h-full overflow-hidden">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
-            <div className="flex flex-col items-center gap-3 border-b border-border bg-background px-4 py-6 lg:hidden">
-              <PiaCoreSection compact />
+            <div className="flex flex-col items-center gap-3 border-b border-zinc-800 bg-zinc-950 px-4 py-6 lg:hidden">
+              <PiaCoreSection compact embedded />
               <DagsrapporterPanel />
             </div>
 
             <div className="space-y-6 px-4 py-6 md:px-8">
-          {dbError && (
-            <div className="flex items-start gap-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-              <div>
-                <p className="font-medium">Kunne ikke koble til databasen</p>
-                <p className="mt-0.5 text-xs opacity-80">{dbError}</p>
+              <div className="mb-2 border-b border-zinc-800 pb-4">
+                <h1 className="text-lg font-bold tracking-tight text-zinc-100">
+                  Portefølje
+                </h1>
+                <p className="text-xs text-zinc-500">
+                  Posisjoner, avkastning og AI-radar
+                </p>
               </div>
-            </div>
-          )}
 
-          {/* Summary cards */}
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-            <SummaryCard
-              label="Total investert"
-              value={`${stats.totalInvestert.toLocaleString("nb-NO", { maximumFractionDigits: 0 })} kr`}
-              icon={<Coins className="h-4 w-4" />}
-            />
-            <SummaryCard
-              label="Total avkastning"
-              value={avkStr ?? "—"}
-              valueClass={
-                avkStr == null
-                  ? undefined
-                  : avkPositive
-                  ? "text-emerald-400"
-                  : avkNegative
-                  ? "text-red-400"
-                  : undefined
-              }
-              sub={avkNokStr ?? "Mangler siste_kurs"}
-              icon={<TrendingUp className="h-4 w-4" />}
-            />
-            <SummaryCard
-              label="Største posisjon"
-              value={
-                holdings[0]
-                  ? `${holdings[0].ticker}`
-                  : "—"
-              }
-              sub={
-                holdings[0]
-                  ? `${holdings[0].investert.toLocaleString("nb-NO", { maximumFractionDigits: 0 })} kr`
-                  : undefined
-              }
-              icon={<TrendingUp className="h-4 w-4" />}
-            />
-          </div>
+              {dbError && (
+                <div className="flex items-start gap-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                  <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-medium">Kunne ikke koble til databasen</p>
+                    <p className="mt-0.5 text-xs opacity-80">{dbError}</p>
+                  </div>
+                </div>
+              )}
 
-          <InvestmentOverview />
+              <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+                <SummaryCard
+                  label="Total investert"
+                  value={`${stats.totalInvestert.toLocaleString("nb-NO", { maximumFractionDigits: 0 })} kr`}
+                  icon={<Coins className="h-4 w-4" />}
+                />
+                <SummaryCard
+                  label="Total avkastning"
+                  value={avkStr ?? "—"}
+                  valueClass={
+                    avkStr == null
+                      ? undefined
+                      : avkPositive
+                      ? "text-emerald-400"
+                      : avkNegative
+                      ? "text-red-400"
+                      : undefined
+                  }
+                  sub={avkNokStr ?? "Mangler siste_kurs"}
+                  icon={<TrendingUp className="h-4 w-4" />}
+                />
+                <SummaryCard
+                  label="Største posisjon"
+                  value={holdings[0] ? `${holdings[0].ticker}` : "—"}
+                  sub={
+                    holdings[0]
+                      ? `${holdings[0].investert.toLocaleString("nb-NO", { maximumFractionDigits: 0 })} kr`
+                      : undefined
+                  }
+                  icon={<TrendingUp className="h-4 w-4" />}
+                />
+              </div>
 
-          {/* Holdings + Watchlist */}
-          {!dbError && (
-            <PortefoljeClient
-              holdings={holdings}
-              aiLogs={aiLogs}
-              totalInvestert={stats.totalInvestert}
-              watchlist={watchlist}
-            />
-          )}
+              <InvestmentOverview />
+
+              {!dbError && (
+                <PortefoljeClient
+                  holdings={holdings}
+                  aiLogs={aiLogs}
+                  totalInvestert={stats.totalInvestert}
+                  watchlist={watchlist}
+                />
+              )}
 
               <div className="h-6" />
             </div>
           </div>
 
-          <div className="hidden w-72 shrink-0 flex-col items-center gap-4 overflow-y-auto border-l border-border bg-background px-4 py-8 lg:flex xl:w-80">
-            <PiaCoreSection compact />
+          <div className="hidden w-72 shrink-0 flex-col items-center gap-4 overflow-y-auto border-l border-zinc-800 bg-zinc-950 px-4 py-8 lg:flex xl:w-80">
+            <PiaCoreSection compact embedded />
             <DagsrapporterPanel />
           </div>
         </div>
       </main>
-    </div>
+    </DashboardFrame>
   );
 }
 
@@ -143,16 +144,16 @@ function SummaryCard({
   icon: React.ReactNode;
 }) {
   return (
-    <Card className="bg-card border-border">
-      <CardContent className="pt-5 pb-4 px-5">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-medium text-muted-foreground">{label}</p>
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary">
+    <Card className="border-zinc-800 bg-zinc-900/40">
+      <CardContent className="px-5 pb-4 pt-5">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-xs font-medium text-zinc-500">{label}</p>
+          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-violet-500/10 text-violet-400">
             {icon}
           </div>
         </div>
-        <p className={cn("text-2xl font-bold", valueClass ?? "text-foreground")}>{value}</p>
-        {sub && <p className="mt-1 text-xs text-muted-foreground">{sub}</p>}
+        <p className={cn("text-2xl font-bold", valueClass ?? "text-zinc-100")}>{value}</p>
+        {sub && <p className="mt-1 text-xs text-zinc-500">{sub}</p>}
       </CardContent>
     </Card>
   );
