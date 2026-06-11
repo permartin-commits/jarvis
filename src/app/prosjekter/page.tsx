@@ -18,7 +18,7 @@ export default async function ProsjekterPage() {
 
   return (
     <DashboardFrame>
-      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background pt-14 md:pt-0">
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-pia-bg">
         <ProsjekterClient rows={rows} />
       </main>
     </DashboardFrame>

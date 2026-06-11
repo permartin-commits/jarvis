@@ -7,32 +7,32 @@ import { CalendarAgendaWidget } from "./CalendarAgendaWidget";
 
 function WidgetFallback() {
   return (
-    <div className="flex items-center justify-center gap-2 py-10 text-xs text-zinc-600">
-      <Loader2 className="h-4 w-4 animate-spin" />
+    <div className="flex items-center justify-center gap-2 py-10 text-xs text-pia-muted">
+      <Loader2 className="h-4 w-4 animate-spin text-pia-coral" />
       Henter…
     </div>
   );
 }
 
-/** Desktop right rail — mørk sidebar-stil (global på alle sider) */
+/** Desktop right rail — Gmail + Kalender (Business m.fl.) */
 export function HomeRightPanel() {
   return (
-    <aside className="hidden xl:flex h-screen w-72 shrink-0 flex-col border-l border-zinc-800 bg-zinc-950">
+    <aside className="hidden xl:flex h-screen w-72 shrink-0 flex-col border-l border-border bg-pia-bg">
       <div className="flex h-16 shrink-0 items-center gap-2.5 px-5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/10 ring-1 ring-violet-500/25">
-          <CalendarDays className="h-4 w-4 text-violet-400" strokeWidth={2} />
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-pia-coral/15 ring-1 ring-pia-coral/30">
+          <CalendarDays className="h-4 w-4 text-pia-coral" strokeWidth={2} />
         </div>
         <div className="flex flex-col leading-none gap-0.5">
-          <span className="text-sm font-bold tracking-wide text-zinc-100">
+          <span className="text-sm font-bold tracking-wide text-pia-text">
             Oversikt
           </span>
-          <span className="text-[10px] uppercase tracking-widest text-zinc-600">
+          <span className="text-[10px] uppercase tracking-widest text-pia-muted">
             Gmail · Kalender
           </span>
         </div>
       </div>
 
-      <Separator className="bg-zinc-800/80" />
+      <Separator className="opacity-50" />
 
       <div className="flex-1 overflow-y-auto">
         <WidgetPanel title="▸ GMAIL - INBOX">
@@ -41,7 +41,7 @@ export function HomeRightPanel() {
           </Suspense>
         </WidgetPanel>
 
-        <Separator className="mx-3 bg-zinc-800/50" />
+        <Separator className="mx-3 opacity-40" />
 
         <WidgetPanel title="▸ KALENDER - OVERSIKT">
           <Suspense fallback={<WidgetFallback />}>

@@ -4,7 +4,7 @@ import { fetchCalendarEvents } from "@/lib/google-api";
 
 function WidgetError() {
   return (
-    <p className="px-3 py-8 text-center text-xs text-zinc-600">
+    <p className="px-3 py-8 text-center text-xs text-pia-muted">
       Kunne ikke hente data
     </p>
   );

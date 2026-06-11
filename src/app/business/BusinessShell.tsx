@@ -22,18 +22,18 @@ export function BusinessShell() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <header className="shrink-0 border-b border-zinc-800 bg-zinc-950 px-6 py-4">
+      <header className="shrink-0 border-b border-border bg-pia-bg px-6 py-4">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-lg font-bold tracking-tight text-zinc-100">
+            <h1 className="text-lg font-bold tracking-tight text-pia-text">
               Business
             </h1>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-pia-muted">
               Verlanse.no · leads, påmeldinger og kurs
             </p>
           </div>
 
-          <nav className="flex gap-1 rounded-xl border border-zinc-800 bg-zinc-900 p-1">
+          <nav className="flex gap-1 rounded-xl border border-border bg-pia-surface/30 p-1">
             {TABS.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
@@ -42,8 +42,8 @@ export function BusinessShell() {
                 className={cn(
                   "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
                   tab === id
-                    ? "bg-violet-600/20 text-violet-300 ring-1 ring-violet-500/40"
-                    : "text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
+                    ? "bg-pia-coral/15 text-pia-coral ring-1 ring-pia-coral/30"
+                    : "text-pia-muted hover:bg-pia-surface/40 hover:text-pia-text"
                 )}
               >
                 <Icon className="h-3.5 w-3.5" />

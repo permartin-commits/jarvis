@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Sidebar } from "@/components/sidebar";
+import { TopNav } from "@/components/TopNav";
 
 export function DashboardFrame({
   children,
@@ -9,9 +9,9 @@ export function DashboardFrame({
   rightPanel?: ReactNode;
 }) {
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <div className="flex min-w-0 flex-1 overflow-hidden">
+    <div className="flex h-screen flex-col overflow-hidden bg-pia-bg">
+      <TopNav />
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         {children}
         {rightPanel}
       </div>

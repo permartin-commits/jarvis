@@ -58,19 +58,19 @@ export function TrainingSessionsLog({
 
   return (
     <>
-      <section className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/40">
-        <header className="border-b border-zinc-800 px-4 py-3">
-          <h2 className="text-sm font-semibold text-zinc-100">
+      <section className="overflow-hidden rounded-xl border border-border bg-pia-surface/25">
+        <header className="border-b border-border px-4 py-3">
+          <h2 className="text-sm font-semibold text-pia-text">
             Strukturerte økter
           </h2>
         </header>
 
         {nextSuggestion && (
-          <div className="border-b border-zinc-800 bg-violet-500/[0.06] px-4 py-3">
-            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-violet-400/90">
+          <div className="border-b border-border bg-pia-coral/[0.06] px-4 py-3">
+            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-pia-coral/90">
               Forslag neste økt
             </p>
-            <p className="text-xs leading-relaxed text-zinc-400">
+            <p className="text-xs leading-relaxed text-pia-muted">
               {nextSuggestion}
             </p>
           </div>
@@ -78,12 +78,12 @@ export function TrainingSessionsLog({
 
         <div>
           <div className="px-4 pb-1 pt-3">
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-pia-muted">
               Siste økter
             </span>
           </div>
 
-          <div className="divide-y divide-zinc-800/70">
+          <div className="divide-y divide-border/70">
             {visibleSessions.map((s) => {
               const notes = s.notes?.trim() ?? "";
               const newlineIdx = notes.indexOf("\n");
@@ -100,21 +100,21 @@ export function TrainingSessionsLog({
                   onClick={() => setSelectedId(s.id)}
                   className={cn(
                     "w-full px-4 py-2.5 text-left text-xs transition-colors",
-                    "hover:bg-zinc-800/40 focus-visible:bg-zinc-800/40 focus-visible:outline-none"
+                    "hover:bg-pia-surface/30 focus-visible:bg-pia-surface/30 focus-visible:outline-none"
                   )}
                 >
                   <div className="flex min-w-0 items-baseline gap-2.5">
-                    <span className="shrink-0 font-semibold tabular-nums text-zinc-300">
+                    <span className="shrink-0 font-semibold tabular-nums text-pia-text">
                       {formatTrainingSessionDate(s)}
                     </span>
-                    <span className="shrink-0 font-medium text-zinc-400">
+                    <span className="shrink-0 font-medium text-pia-muted">
                       {protocolLabel(s.protocol_type)}
                     </span>
                     {holdSize && (
-                      <span className="shrink-0 text-zinc-600">{holdSize}</span>
+                      <span className="shrink-0 text-pia-muted/70">{holdSize}</span>
                     )}
                     {userNote && (
-                      <span className="truncate text-zinc-600">{userNote}</span>
+                      <span className="truncate text-pia-muted/70">{userNote}</span>
                     )}
                   </div>
                 </button>
@@ -123,11 +123,11 @@ export function TrainingSessionsLog({
           </div>
 
           {hasMore && (
-            <div className="border-t border-zinc-800/70 px-4 py-2">
+            <div className="border-t border-border/70 px-4 py-2">
               <Button
                 type="button"
                 variant="ghost"
-                className="h-8 w-full text-xs text-zinc-500 hover:bg-zinc-800/40 hover:text-zinc-300"
+                className="h-8 w-full text-xs text-pia-muted hover:bg-pia-surface/30 hover:text-pia-text"
                 onClick={() => setShowAll((v) => !v)}
               >
                 {showAll

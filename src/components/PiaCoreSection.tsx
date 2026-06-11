@@ -5,6 +5,7 @@ import {
   useRef,
   useEffect,
   useCallback,
+  useId,
   FormEvent,
 } from "react";
 import {
@@ -241,6 +242,7 @@ function PiaOrb({
   size = 200,
   hero = false,
   embedded = false,
+  dashboard = false,
 }: {
   isListening: boolean;
   onClick: () => void;
@@ -249,12 +251,19 @@ function PiaOrb({
   hero?: boolean;
   /** Lysere ringer/glow på mørk bakgrunn (sidebar) */
   embedded?: boolean;
+  /** Hero orbit på operation dashboard — coral/pink glow */
+  dashboard?: boolean;
 }) {
-  const ringStroke = embedded
-    ? isListening
-      ? "#fca5a5"
-      : "#a78bfa"
-    : "var(--palette-violet)";
+  const uid = useId().replace(/:/g, "");
+  const fillId = `orbFill-${uid}`;
+  const softGlowId = `softGlow-${uid}`;
+  const coreBloomId = `coreBloom-${uid}`;
+
+  const ringStroke = isListening
+    ? "#f87171"
+    : dashboard || embedded
+      ? "var(--pia-accent-pink)"
+      : "var(--palette-violet)";
 
   return (
     <button
@@ -271,10 +280,37 @@ function PiaOrb({
       className={cn(
         "relative flex items-center justify-center select-none rounded-full",
         "outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+        dashboard ? "overflow-visible" : "overflow-hidden",
         supported ? "cursor-pointer" : "cursor-default"
       )}
       style={{ width: size, height: size }}
     >
+      {/* Dashboard: myk atmosfære som fader ut i bakgrunnen */}
+      {dashboard && !isListening && (
+        <>
+          <div
+            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+            style={{
+              width: size * 2.4,
+              height: size * 2.4,
+              background:
+                "radial-gradient(circle, color-mix(in srgb, var(--pia-accent-coral) 14%, transparent) 0%, transparent 62%)",
+              filter: "blur(48px)",
+            }}
+          />
+          <div
+            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+            style={{
+              width: size * 1.6,
+              height: size * 1.6,
+              background:
+                "radial-gradient(circle, color-mix(in srgb, var(--pia-accent-pink) 12%, transparent) 0%, transparent 58%)",
+              filter: "blur(32px)",
+            }}
+          />
+        </>
+      )}
+
       {/* Listening pulse rings */}
       {isListening && (
         <>
@@ -293,20 +329,23 @@ function PiaOrb({
         </>
       )}
 
-      {/* Glow kun rundt selve kula (liten radius) */}
+      {/* Glow rundt kula */}
       <div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-opacity duration-500"
         style={{
-          width: size * 0.52,
-          height: size * 0.52,
+          width: dashboard ? size * 0.95 : size * 0.52,
+          height: dashboard ? size * 0.95 : size * 0.52,
           background: isListening
             ? "radial-gradient(circle, rgba(239,68,68,0.35) 0%, transparent 72%)"
-            : "radial-gradient(circle, var(--palette-raspberry) 0%, transparent 72%)",
-          opacity: isListening ? 0.55 : embedded ? 0.65 : 0.45,
-          filter: "blur(18px)",
+            : dashboard
+              ? "radial-gradient(circle, color-mix(in srgb, var(--pia-accent-coral) 28%, transparent) 0%, color-mix(in srgb, var(--pia-accent-pink) 8%, transparent) 45%, transparent 72%)"
+              : "radial-gradient(circle, var(--palette-raspberry) 0%, transparent 72%)",
+          opacity: isListening ? 0.55 : dashboard ? 0.65 : embedded ? 0.65 : 0.45,
+          filter: dashboard ? "blur(36px)" : "blur(18px)",
         }}
       />
 
+      <div className={cn("absolute inset-0", dashboard && "pia-orb-feather")}>
       <svg
         width={size}
         height={size}
@@ -315,38 +354,45 @@ function PiaOrb({
         className="absolute inset-0"
       >
         <defs>
-          <radialGradient id="orbFill" cx="38%" cy="32%" r="65%">
+          <radialGradient id={fillId} cx="38%" cy="32%" r={dashboard ? "85%" : "65%"}>
             <stop
               offset="0%"
               style={{
                 stopColor: isListening ? "#ef4444" : "var(--palette-raspberry)",
-                stopOpacity: hero ? 0.85 : 0.75,
+                stopOpacity: dashboard ? 0.75 : hero ? 0.85 : 0.75,
               }}
             />
             <stop
-              offset="55%"
+              offset="45%"
               style={{
-                stopColor: isListening ? "#b91c1c" : "var(--palette-violet)",
-                stopOpacity: 0.9,
+                stopColor: isListening ? "#b91c1c" : dashboard ? "var(--pia-accent-pink)" : "var(--palette-violet)",
+                stopOpacity: dashboard ? 0.35 : 0.9,
+              }}
+            />
+            <stop
+              offset="75%"
+              style={{
+                stopColor: isListening ? "#7f1d1d" : "var(--palette-violet)",
+                stopOpacity: dashboard ? 0.12 : 0.9,
               }}
             />
             <stop
               offset="100%"
               style={{
-                stopColor: isListening ? "#7f1d1d" : "var(--palette-violet)",
-                stopOpacity: 1,
+                stopColor: dashboard ? "var(--pia-bg)" : isListening ? "#7f1d1d" : "var(--palette-violet)",
+                stopOpacity: dashboard ? 0 : 1,
               }}
             />
           </radialGradient>
-          <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+          <filter id={softGlowId} x="-40%" y="-40%" width="180%" height="180%">
             <feGaussianBlur stdDeviation="2" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-          <filter id="coreBloom" x="-60%" y="-60%" width="220%" height="220%">
-            <feGaussianBlur stdDeviation="7" result="blur" />
+          <filter id={coreBloomId} x="-80%" y="-80%" width="260%" height="260%">
+            <feGaussianBlur stdDeviation={dashboard ? "12" : "7"} result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
@@ -355,83 +401,113 @@ function PiaOrb({
         </defs>
 
         {/* Ring 1 — outermost dotted, slow CW */}
-        <g>
-          <animateTransform
-            attributeName="transform"
-            type="rotate"
-            from="0 100 100"
-            to="360 100 100"
-            dur="32s"
-            repeatCount="indefinite"
-          />
-          <circle
-            cx="100" cy="100" r="90"
-            stroke={isListening ? "#7f1d1d" : ringStroke}
-            strokeWidth="0.75"
-            strokeDasharray="2 10"
-            opacity={embedded ? "0.75" : "0.55"}
-          />
-          <line x1="100" y1="4"   x2="100" y2="17"  stroke={isListening ? "#7f1d1d" : ringStroke} strokeWidth="1.5" opacity={embedded ? "0.9" : "0.7"} />
-          <line x1="100" y1="183" x2="100" y2="196" stroke={isListening ? "#7f1d1d" : ringStroke} strokeWidth="1.5" opacity="0.7" />
-          <line x1="4"   y1="100" x2="17"  y2="100" stroke={isListening ? "#7f1d1d" : ringStroke} strokeWidth="1.5" opacity="0.7" />
-          <line x1="183" y1="100" x2="196" y2="100" stroke={isListening ? "#7f1d1d" : ringStroke} strokeWidth="1.5" opacity="0.7" />
-        </g>
+        {!dashboard && (
+          <g>
+            <animateTransform
+              attributeName="transform"
+              type="rotate"
+              from="0 100 100"
+              to="360 100 100"
+              dur="32s"
+              repeatCount="indefinite"
+            />
+            <circle
+              cx="100" cy="100" r="90"
+              stroke={isListening ? "#7f1d1d" : ringStroke}
+              strokeWidth="0.75"
+              strokeDasharray="2 10"
+              opacity={embedded ? "0.75" : "0.55"}
+            />
+            <line x1="100" y1="4"   x2="100" y2="17"  stroke={isListening ? "#7f1d1d" : ringStroke} strokeWidth="1.5" opacity={embedded ? "0.9" : "0.7"} />
+            <line x1="100" y1="183" x2="100" y2="196" stroke={isListening ? "#7f1d1d" : ringStroke} strokeWidth="1.5" opacity="0.7" />
+            <line x1="4"   y1="100" x2="17"  y2="100" stroke={isListening ? "#7f1d1d" : ringStroke} strokeWidth="1.5" opacity="0.7" />
+            <line x1="183" y1="100" x2="196" y2="100" stroke={isListening ? "#7f1d1d" : ringStroke} strokeWidth="1.5" opacity="0.7" />
+          </g>
+        )}
+
+        {/* Dashboard: én myk ytre ring */}
+        {dashboard && !isListening && (
+          <g opacity="0.35">
+            <animateTransform
+              attributeName="transform"
+              type="rotate"
+              from="0 100 100"
+              to="360 100 100"
+              dur="40s"
+              repeatCount="indefinite"
+            />
+            <circle
+              cx="100" cy="100" r="82"
+              stroke="var(--pia-accent-pink)"
+              strokeWidth="0.5"
+              strokeDasharray="3 14"
+              opacity="0.5"
+            />
+          </g>
+        )}
 
         {/* Ring 2 — arc segments, CCW */}
-        <g>
+        <g opacity={dashboard ? 0.28 : 1}>
           <animateTransform
             attributeName="transform"
             type="rotate"
             from="0 100 100"
             to="-360 100 100"
-            dur={isListening ? "8s" : "18s"}
+            dur={isListening ? "8s" : dashboard ? "24s" : "18s"}
             repeatCount="indefinite"
           />
           <circle
             cx="100" cy="100" r="74"
             stroke={isListening ? "#991b1b" : ringStroke}
-            strokeWidth="1.5"
+            strokeWidth={dashboard ? "1" : "1.5"}
             strokeDasharray="84 32"
-            opacity="0.65"
-            filter="url(#softGlow)"
+            opacity={dashboard ? "0.45" : "0.65"}
+            filter={`url(#${softGlowId})`}
           />
         </g>
 
         {/* Ring 3 — small dashes, CW medium */}
-        <g>
-          <animateTransform
-            attributeName="transform"
-            type="rotate"
-            from="0 100 100"
-            to="360 100 100"
-            dur={isListening ? "5s" : "11s"}
-            repeatCount="indefinite"
-          />
-          <circle
-            cx="100" cy="100" r="59"
-            stroke={isListening ? "#b91c1c" : ringStroke}
-            strokeWidth="0.75"
-            strokeDasharray="6 5"
-            opacity="0.4"
-          />
-        </g>
+        {!dashboard && (
+          <g>
+            <animateTransform
+              attributeName="transform"
+              type="rotate"
+              from="0 100 100"
+              to="360 100 100"
+              dur={isListening ? "5s" : "11s"}
+              repeatCount="indefinite"
+            />
+            <circle
+              cx="100" cy="100" r="59"
+              stroke={isListening ? "#b91c1c" : ringStroke}
+              strokeWidth="0.75"
+              strokeDasharray="6 5"
+              opacity="0.4"
+            />
+          </g>
+        )}
 
         {/* Ring 4 — solid inner ring, static */}
         <circle
           cx="100" cy="100" r="47"
           stroke={isListening ? "#dc2626" : ringStroke}
           strokeWidth="1"
-          opacity="0.55"
-          filter="url(#softGlow)"
+          opacity={dashboard ? "0.2" : "0.55"}
+          filter={`url(#${softGlowId})`}
         />
 
         {/* Crosshair */}
-        <line x1="64" y1="100" x2="136" y2="100" style={{ stroke: isListening ? "#ef4444" : ringStroke }} strokeWidth="0.5" opacity="0.18" />
-        <line x1="100" y1="64" x2="100" y2="136" style={{ stroke: isListening ? "#ef4444" : ringStroke }} strokeWidth="0.5" opacity="0.18" />
+        {!dashboard && (
+          <>
+            <line x1="64" y1="100" x2="136" y2="100" style={{ stroke: isListening ? "#ef4444" : ringStroke }} strokeWidth="0.5" opacity="0.18" />
+            <line x1="100" y1="64" x2="100" y2="136" style={{ stroke: isListening ? "#ef4444" : ringStroke }} strokeWidth="0.5" opacity="0.18" />
+          </>
+        )}
 
         {/* Core fill */}
-        <circle cx="100" cy="100" r="47" fill="url(#orbFill)" filter="url(#coreBloom)" />
+        <circle cx="100" cy="100" r="47" fill={`url(#${fillId})`} filter={`url(#${coreBloomId})`} />
       </svg>
+      </div>
 
       {/* Centre icon — mic when listening, bolt otherwise */}
       <div className="relative z-10 flex items-center justify-center transition-transform duration-200 active:scale-90">
@@ -460,6 +536,7 @@ export function PiaCoreSection({
   compact = false,
   hero = false,
   embedded = false,
+  dashboard = false,
   chatApi = DEFAULT_CHAT_API,
   fixedSessionId,
   labelText = "PIA",
@@ -471,6 +548,8 @@ export function PiaCoreSection({
   hero?: boolean;
   /** Transparent på mørk sidebar — orb og chat uten hvit boks */
   embedded?: boolean;
+  /** Hero orbit på operation dashboard */
+  dashboard?: boolean;
   /** Override the API endpoint, e.g. "/api/trener-chat" */
   chatApi?: string;
   /** When provided, this session ID is used permanently (no regeneration on reload). */
@@ -738,9 +817,10 @@ export function PiaCoreSection({
   return (
     <div
       className={cn(
-        "flex w-full flex-col items-center overflow-hidden",
-        embedded
-          ? "gap-4 bg-transparent px-0 py-2"
+        "flex w-full flex-col items-center",
+        dashboard ? "overflow-visible" : "overflow-hidden",
+        embedded || dashboard
+          ? cn("gap-4 bg-transparent px-0 py-2", dashboard && "gap-8")
           : cn(
               "gap-6 rounded-2xl bg-white",
               compact ? "gap-4 px-4 py-5" : hero ? "px-8 py-10" : "px-6 py-8"
@@ -752,20 +832,23 @@ export function PiaCoreSection({
         isListening={isListening}
         onClick={toggleListening}
         supported={!micUnsupported}
-        size={compact ? 120 : hero ? 240 : 200}
-        hero={hero}
+        size={compact ? 120 : dashboard ? 220 : hero ? 240 : 200}
+        hero={hero || dashboard}
         embedded={embedded}
+        dashboard={dashboard}
       />
 
       {/* ── Label ────────────────────────────────────────────────── */}
       <div className="text-center space-y-1">
         <h2 className={cn(
           "font-bold tracking-[0.45em] uppercase bg-clip-text text-transparent",
-          hero
+          dashboard
+            ? "text-3xl bg-gradient-to-r from-pia-coral via-pia-pink to-pia-coral md:text-4xl"
+            : hero
             ? "text-3xl bg-gradient-to-r from-palette-raspberry via-primary to-palette-pink"
             : "text-2xl bg-gradient-to-r from-primary via-primary/60 to-primary",
-          compact && !embedded && "text-base !bg-gradient-to-r from-primary via-primary/60 to-primary",
-          compact && embedded && "text-base !bg-gradient-to-r from-violet-300 via-violet-200 to-fuchsia-300"
+          compact && !embedded && !dashboard && "text-base !bg-gradient-to-r from-primary via-primary/60 to-primary",
+          compact && embedded && "text-base !bg-gradient-to-r from-pia-pink via-pia-text to-pia-coral"
         )}>
           {labelText}
         </h2>

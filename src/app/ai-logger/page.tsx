@@ -32,9 +32,9 @@ export default async function AiLoggerPage() {
 
   return (
     <DashboardFrame>
-      <main className="min-w-0 flex-1 overflow-y-auto bg-background pt-14 md:pt-0">
+      <main className="min-w-0 flex-1 overflow-y-auto bg-pia-bg">
         {/* Header */}
-        <div className="sticky top-14 md:top-0 z-10 border-b border-border bg-background/80 backdrop-blur-sm px-4 md:px-8 py-4">
+        <div className="sticky top-0 z-10 border-b border-border bg-pia-bg/80 backdrop-blur-sm px-4 md:px-8 py-4">
           <h1 className="text-lg font-semibold text-foreground">AI Logger</h1>
           <p className="text-xs text-muted-foreground">
             Live data fra <code className="font-mono">ai_logger</code>-tabellen i Supabase

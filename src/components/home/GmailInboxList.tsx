@@ -74,19 +74,19 @@ export function GmailInboxList({ messages }: { messages: GmailMessage[] }) {
             type="button"
             onClick={() => void openEmail(email.id)}
             className={cn(
-              "grid w-full grid-cols-[minmax(0,1fr)_52px] gap-2 border-b border-zinc-800/60 px-3 py-2.5 text-left last:border-0 transition-colors hover:bg-zinc-800/40",
+              "grid w-full grid-cols-[minmax(0,1fr)_52px] gap-2 border-b border-border/60 px-3 py-2.5 text-left last:border-0 transition-colors hover:bg-pia-surface/30",
               !email.isUnread && "opacity-80"
             )}
           >
             <div className="min-w-0">
               <div className="flex min-w-0 items-center gap-1.5">
                 {email.isUnread && (
-                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-violet-400" aria-hidden />
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-pia-coral" aria-hidden />
                 )}
                 <p
                   className={cn(
                     "truncate text-xs",
-                    email.isUnread ? "font-bold text-zinc-100" : "text-zinc-500"
+                    email.isUnread ? "font-bold text-pia-text" : "text-pia-muted"
                   )}
                 >
                   {email.sender}
@@ -95,7 +95,7 @@ export function GmailInboxList({ messages }: { messages: GmailMessage[] }) {
               <p
                 className={cn(
                   "mt-0.5 truncate text-[11px]",
-                  email.isUnread ? "font-medium text-zinc-200/90" : "text-zinc-600"
+                  email.isUnread ? "font-medium text-pia-text/90" : "text-pia-muted"
                 )}
               >
                 {email.subject}
@@ -104,7 +104,7 @@ export function GmailInboxList({ messages }: { messages: GmailMessage[] }) {
             <span
               className={cn(
                 "shrink-0 text-right text-[10px] tabular-nums",
-                email.isUnread ? "font-semibold text-zinc-400" : "text-zinc-600"
+                email.isUnread ? "font-semibold text-pia-muted" : "text-pia-muted/70"
               )}
             >
               {formatEmailTime(email.time)}
@@ -121,14 +121,14 @@ export function GmailInboxList({ messages }: { messages: GmailMessage[] }) {
         subtitle={detail ? `${detail.sender}${detail.fromEmail ? ` · ${detail.fromEmail}` : ""}` : undefined}
         badge={
           detail?.isUnread ? (
-            <span className="inline-flex rounded-md border border-violet-500/30 bg-violet-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-300">
+            <span className="inline-flex rounded-md border border-pia-coral/30 bg-pia-coral/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-pia-coral">
               Ulest
             </span>
           ) : undefined
         }
       >
         {loading && (
-          <div className="flex items-center justify-center gap-2 py-16 text-sm text-zinc-500">
+          <div className="flex items-center justify-center gap-2 py-16 text-sm text-pia-muted">
             <Loader2 className="h-4 w-4 animate-spin" />
             Henter e-post…
           </div>
@@ -138,17 +138,17 @@ export function GmailInboxList({ messages }: { messages: GmailMessage[] }) {
         )}
         {detail && !loading && (
           <div className="space-y-4">
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3 text-xs text-zinc-500 space-y-1">
-              {detail.to && <p><span className="text-zinc-600">Til:</span> {detail.to}</p>}
-              <p><span className="text-zinc-600">Dato:</span> {formatFullTime(detail.time)}</p>
+            <div className="rounded-xl border border-border bg-pia-surface/30 p-3 text-xs text-pia-muted space-y-1">
+              {detail.to && <p><span className="text-pia-muted/70">Til:</span> {detail.to}</p>}
+              <p><span className="text-pia-muted/70">Dato:</span> {formatFullTime(detail.time)}</p>
             </div>
             {detail.bodyHtml ? (
               <div
-                className="prose prose-invert prose-sm max-w-none text-zinc-300 [&_a]:text-violet-300"
+                className="prose prose-invert prose-sm max-w-none text-pia-text/90 [&_a]:text-pia-coral"
                 dangerouslySetInnerHTML={{ __html: detail.bodyHtml }}
               />
             ) : (
-              <pre className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-300 font-sans">
+              <pre className="whitespace-pre-wrap text-sm leading-relaxed text-pia-text/90 font-sans">
                 {detail.bodyText ?? "(Ingen innhold)"}
               </pre>
             )}

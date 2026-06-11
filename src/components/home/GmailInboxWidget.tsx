@@ -4,7 +4,7 @@ import { fetchGmailMessages } from "@/lib/google-api";
 
 function WidgetError() {
   return (
-    <p className="px-3 py-8 text-center text-xs text-zinc-600">
+    <p className="px-3 py-8 text-center text-xs text-pia-muted">
       Kunne ikke hente data
     </p>
   );
@@ -22,7 +22,7 @@ export async function GmailInboxWidget() {
 
   if (messages.length === 0) {
     return (
-      <p className="px-3 py-8 text-center text-xs text-zinc-600">
+      <p className="px-3 py-8 text-center text-xs text-pia-muted">
         Ingen e-poster i innboksen
       </p>
     );

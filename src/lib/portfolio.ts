@@ -121,8 +121,10 @@ export async function getPortfolioStats(): Promise<PortfolioStats> {
       `SELECT
          COALESCE(SUM(antall * kjopskurs), 0)  AS total_investert,
          COUNT(*)                              AS antall_posisjoner,
-         SUM(antall * kjopskurs)               AS cost_basis,
-         SUM(antall * siste_kurs)              AS current_value
+         COALESCE(SUM(antall * kjopskurs), 0)  AS cost_basis,
+         COALESCE(SUM(
+           antall * COALESCE(NULLIF(siste_kurs, 0), kjopskurs)
+         ), 0)                                 AS current_value
        FROM portfolio
        WHERE antall > 0`
     );
@@ -131,8 +133,8 @@ export async function getPortfolioStats(): Promise<PortfolioStats> {
     const costBasis  = Number(row?.cost_basis   ?? 0);
     const currValue  = Number(row?.current_value ?? 0);
 
-    const avkNok = currValue > 0 && costBasis > 0 ? currValue - costBasis : null;
-    const avkPct = costBasis > 0 && currValue > 0
+    const avkNok = costBasis > 0 ? currValue - costBasis : null;
+    const avkPct = costBasis > 0
       ? ((currValue - costBasis) / costBasis) * 100
       : null;
 

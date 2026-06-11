@@ -44,20 +44,20 @@ export default async function PortefoljePage() {
 
   return (
     <DashboardFrame>
-      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-zinc-950 pt-14 md:pt-0">
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-pia-bg">
         <div className="flex h-full overflow-hidden">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
-            <div className="flex flex-col items-center gap-3 border-b border-zinc-800 bg-zinc-950 px-4 py-6 lg:hidden">
+            <div className="flex flex-col items-center gap-3 border-b border-border bg-pia-bg px-4 py-6 lg:hidden">
               <PiaCoreSection compact embedded />
               <DagsrapporterPanel />
             </div>
 
             <div className="space-y-6 px-4 py-6 md:px-8">
-              <div className="mb-2 border-b border-zinc-800 pb-4">
-                <h1 className="text-lg font-bold tracking-tight text-zinc-100">
+              <div className="mb-2 border-b border-border pb-4">
+                <h1 className="text-lg font-bold tracking-tight text-pia-text">
                   Portefølje
                 </h1>
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-pia-muted">
                   Posisjoner, avkastning og AI-radar
                 </p>
               </div>
@@ -120,7 +120,7 @@ export default async function PortefoljePage() {
             </div>
           </div>
 
-          <div className="hidden w-72 shrink-0 flex-col items-center gap-4 overflow-y-auto border-l border-zinc-800 bg-zinc-950 px-4 py-8 lg:flex xl:w-80">
+          <div className="hidden w-72 shrink-0 flex-col items-center gap-4 overflow-y-auto border-l border-border bg-pia-bg px-4 py-8 lg:flex xl:w-80">
             <PiaCoreSection compact embedded />
             <DagsrapporterPanel />
           </div>
@@ -144,16 +144,16 @@ function SummaryCard({
   icon: React.ReactNode;
 }) {
   return (
-    <Card className="border-zinc-800 bg-zinc-900/40">
+    <Card className="border-border bg-pia-surface/25">
       <CardContent className="px-5 pb-4 pt-5">
         <div className="mb-3 flex items-center justify-between">
-          <p className="text-xs font-medium text-zinc-500">{label}</p>
+          <p className="text-xs font-medium text-pia-muted">{label}</p>
           <div className="flex h-7 w-7 items-center justify-center rounded-md bg-violet-500/10 text-violet-400">
             {icon}
           </div>
         </div>
-        <p className={cn("text-2xl font-bold", valueClass ?? "text-zinc-100")}>{value}</p>
-        {sub && <p className="mt-1 text-xs text-zinc-500">{sub}</p>}
+        <p className={cn("text-2xl font-bold", valueClass ?? "text-pia-text")}>{value}</p>
+        {sub && <p className="mt-1 text-xs text-pia-muted">{sub}</p>}
       </CardContent>
     </Card>
   );
